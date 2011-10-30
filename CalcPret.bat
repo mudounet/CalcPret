@@ -29,7 +29,7 @@ INFO("Starting program (V ".PROGRAM_VERSION.")");
 #########################################################
 # loading of Configuration files
 #########################################################
-my $config = _loadConfig("./InitConfig/","CalcPret.config.xml",undef, KeyAttr => {});#, ForceArray => qr/^(bien_immobilier|apports|prets|revenus)$/);
+my $config = _loadConfig("./InitConfig/","CalcPret.config.xml",undef, KeyAttr => {}, ForceArray => qr/^(charge|apport|pret|revenu)$/);
 
 my %output;
 
@@ -42,6 +42,12 @@ foreach my $charge (@{$config->{bien_immobilier}->{charge}}) {
 	INFO "Traitement de la partie \"$charge->{name}\" du bien immobilier";
 	
 	$output{"Cout total"} += $charge->{montant};
+}
+
+foreach my $charge (@{$config->{revenus}->{revenu}}) {
+	INFO "Traitement de la partie \"$charge->{name}\" du bien immobilier";
+	
+	$output{echeances}[$charge->{mise_en_place}]{revenu} += $charge->{montant};
 }
 
 print Dumper(\%output);

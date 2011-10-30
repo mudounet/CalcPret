@@ -14,6 +14,12 @@
     <revenu>
       <name>Salaire principal</name>
       <montant>1200</montant>
+	  <mise_en_place>0</mise_en_place>
+    </revenu>
+	<revenu>
+      <name>Salaire principal</name>
+      <montant>1230</montant>
+	  <mise_en_place>12</mise_en_place>
     </revenu>
   </revenus>
   <apports>
