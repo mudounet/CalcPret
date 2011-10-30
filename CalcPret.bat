@@ -47,8 +47,6 @@ foreach my $charge (@{$config->{bien_immobilier}->{charge}}) {
 #########################################################
 # Mise en place des échéances des revenus
 #########################################################
-
-
 foreach my $charge (@{$config->{revenus}->{revenu}}) {
 	INFO "Traitement de la partie \"$charge->{name}\" du bien immobilier";
 	
@@ -56,9 +54,20 @@ foreach my $charge (@{$config->{revenus}->{revenu}}) {
 }
 
 #########################################################
+# Déduction des apports personnels
+#########################################################
+$output{"Apports personnels"} = 0;
+foreach my $charge (@{$config->{apports}->{apport}}) {
+	INFO "Déduction de l'apport \"$charge->{name}\" du bien immobilier";
+	
+	$output{"Apports personnels"} += $charge->{montant};
+}
+
+#########################################################
 # Calcul des échéances
 #########################################################
-my $capital_restant_du = $output{"Cout total"};
+my $capital_restant_du = $output{"Cout total"} - $output{"Apports personnels"};
+$output{echeances}[0]{capital_a_rembourser} = $capital_restant_du;
 my $dernier_revenu = $output{echeances}[0]{revenu};
 $output{synthese}{assurance} =0;
 $output{synthese}{interets_total} = 0;
@@ -99,7 +108,7 @@ while($capital_restant_du > 0) {
 }
 
 open FILE,">output.txt";
-print FILE Dumper($output{echeances});
+print FILE Dumper(\%output);
 close FILE;
 
 print Dumper($output{synthese});
