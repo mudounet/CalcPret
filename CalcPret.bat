@@ -67,13 +67,11 @@ $output{synthese}{echeances} = 0;
 while($capital_restant_du > 0) {
 	++$output{synthese}{echeances};
 	my $echeance = $output{synthese}{echeances};
+
 	INFO "Calcul de l'echeance $echeance (".($echeance/12).") ...";
 
 	####### Calcul du revenu à prendre en compte ########################
 	$dernier_revenu = $output{echeances}[$echeance]{revenu} if($output{echeances}[$echeance]{revenu});
-	if($capital_restant_du < $dernier_revenu) {
-		$dernier_revenu = $capital_restant_du;
-	}
 	$output{echeances}[$echeance]{revenu} = $dernier_revenu;
 
 	####### Calcul du montant des interets ##########################
@@ -89,11 +87,20 @@ while($capital_restant_du > 0) {
 
 	
 	####### Calcul du capital remboursé #############################
-	$output{echeances}[$echeance]{capital_rembourse} = $dernier_revenu - $interets - $output{echeances}[$echeance]{assurance};
+	if($capital_restant_du < $dernier_revenu) {
+		$output{echeances}[$echeance]{capital_rembourse} = $capital_restant_du;
+	}
+	else {
+		$output{echeances}[$echeance]{capital_rembourse} = $dernier_revenu - $interets - $output{echeances}[$echeance]{assurance};
+	}
+	
 	$capital_restant_du = $capital_restant_du - $output{echeances}[$echeance]{capital_rembourse};
 	$output{echeances}[$echeance]{capital_a_rembourser} = $capital_restant_du;
 }
 
+open FILE,">output.txt";
+print FILE Dumper($output{echeances});
+close FILE;
 
 print Dumper($output{synthese});
 
