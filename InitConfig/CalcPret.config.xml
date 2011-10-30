@@ -1,11 +1,51 @@
-<?xml version='1.0' encoding='ISO-8859-1'?>
+<?xml version='1.0' encoding='iso-8859-1'?>
 <config version='0.1'>
-	<components>
-		<component>
-			<name>riom_testability</name><!-- Nom du module. Attention aux caractères interdits par ControlBuild -->
-			<refFile>testability_riom.txt</refFile><!-- Nom du fichier a traiter en entrée. Ceci doit être un fichier de variables ControlBuild au format XML -->
-			<outDir>**NAME**</outDir><!-- Répertoire de sortie. **NAME** prends le nom du module comme sortie -->
-			<template>Default</template><!-- Name of template to use -->
-		</component>
-	</components>
+  <bien_immobilier>
+    <charge>
+      <name>Logement</name>
+      <montant>270000</montant>
+    </charge>
+    <charge>
+      <name>Frais notaire</name>
+      <montant>7500</montant>
+    </charge>
+  </bien_immobilier>
+  <revenus>
+    <revenu>
+      <name>Salaire principal</name>
+      <montant>1200</montant>
+    </revenu>
+  </revenus>
+  <apports>
+    <apport>
+      <name>Apport personnel</name>
+      <montant>50000</montant>
+    </apport>
+  </apports>
+  <prets>
+    <pret>
+      <name>PAS</name>
+      <montant>94500</montant>
+      <taux>4</taux>
+    </pret>
+    <pret2>
+      <name>PTZ (BBC en CUS)</name>
+      <montant>94500</montant>
+      <taux>0</taux>
+      <mensualites>
+        <mensualite>
+          <montant>188</montant>
+          <duree>276</duree>
+        </mensualite>
+        <mensualite>
+          <montant>504</montant>
+          <duree>84</duree>
+        </mensualite>
+      </mensualites>
+    </pret2>
+  </prets>
+  <assurance>
+    <name>Assurance</name>
+    <taux>0,08</taux>
+  </assurance>
 </config>
