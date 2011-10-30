@@ -52,6 +52,6 @@
   </prets>
   <assurance>
     <name>Assurance</name>
-    <taux>0,08</taux>
+    <taux>0.08</taux>
   </assurance>
 </config>

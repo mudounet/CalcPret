@@ -64,21 +64,26 @@ my $dernier_revenu = $output{echeances}[0]{revenu};
 
 while($capital_restant_du > 0) {
 	$echeance++;
-	INFO "Calcul de l'échéance $echeance (".($echeance/12).") ...";
+	INFO "Calcul de l'echeance $echeance (".($echeance/12).") ...";
 
-	
-	my $interets = 0;
-	my $assurance = 0;
-
+	####### Calcul du revenu à prendre en compte ########################
 	$dernier_revenu = $output{echeances}[$echeance]{revenu} if($output{echeances}[$echeance]{revenu});
 	if($capital_restant_du < $dernier_revenu) {
 		$dernier_revenu = $capital_restant_du;
-	}	
-	
+	}
 	$output{echeances}[$echeance]{revenu} = $dernier_revenu;
 
+	####### Calcul du montant des interets ##########################
+	my $interets = 0;
+	DEBUG "Montant des interets : $interets";
+	
+	####### Calcul du montant de l'assurance ########################
+	$output{echeances}[$echeance]{assurance} = ($config->{assurance}->{taux} /1200) * $capital_restant_du;	
+	DEBUG "Montant de l'assurance : $output{echeances}[$echeance]{assurance}";
 
-	$output{echeances}[$echeance]{capital_rembourse} = $dernier_revenu - $interets - $assurance;
+	
+	####### Calcul du capital remboursé #############################
+	$output{echeances}[$echeance]{capital_rembourse} = $dernier_revenu - $interets - $output{echeances}[$echeance]{assurance};
 	$capital_restant_du = $capital_restant_du - $output{echeances}[$echeance]{capital_rembourse};
 	$output{echeances}[$echeance]{capital_a_rembourser} = $capital_restant_du;
 }
