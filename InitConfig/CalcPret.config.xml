@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='ISO-8859-1'?>
+<config version='0.1'>
+	<components>
+		<component>
+			<name>riom_testability</name><!-- Nom du module. Attention aux caractères interdits par ControlBuild -->
+			<refFile>testability_riom.txt</refFile><!-- Nom du fichier a traiter en entrée. Ceci doit être un fichier de variables ControlBuild au format XML -->
+			<outDir>**NAME**</outDir><!-- Répertoire de sortie. **NAME** prends le nom du module comme sortie -->
+			<template>Default</template><!-- Name of template to use -->
+		</component>
+	</components>
+</config>
