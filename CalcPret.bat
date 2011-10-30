@@ -44,11 +44,45 @@ foreach my $charge (@{$config->{bien_immobilier}->{charge}}) {
 	$output{"Cout total"} += $charge->{montant};
 }
 
+#########################################################
+# Mise en place des échéances des revenus
+#########################################################
+
+
 foreach my $charge (@{$config->{revenus}->{revenu}}) {
 	INFO "Traitement de la partie \"$charge->{name}\" du bien immobilier";
 	
-	$output{echeances}[$charge->{mise_en_place}]{revenu} += $charge->{montant};
+	$output{echeances}[$charge->{echeance}]{revenu} += $charge->{montant};
 }
+
+#########################################################
+# Calcul des échéances
+#########################################################
+my $capital_restant_du = $output{"Cout total"};
+my $echeance = 0;
+my $dernier_revenu = $output{echeances}[0]{revenu};
+
+while($capital_restant_du > 0) {
+	$echeance++;
+	INFO "Calcul de l'échéance $echeance (".($echeance/12).") ...";
+
+	
+	my $interets = 0;
+	my $assurance = 0;
+
+	$dernier_revenu = $output{echeances}[$echeance]{revenu} if($output{echeances}[$echeance]{revenu});
+	if($capital_restant_du < $dernier_revenu) {
+		$dernier_revenu = $capital_restant_du;
+	}	
+	
+	$output{echeances}[$echeance]{revenu} = $dernier_revenu;
+
+
+	$output{echeances}[$echeance]{capital_rembourse} = $dernier_revenu - $interets - $assurance;
+	$capital_restant_du = $capital_restant_du - $output{echeances}[$echeance]{capital_rembourse};
+	$output{echeances}[$echeance]{capital_a_rembourser} = $capital_restant_du;
+}
+
 
 print Dumper(\%output);
 

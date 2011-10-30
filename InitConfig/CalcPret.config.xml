@@ -14,12 +14,12 @@
     <revenu>
       <name>Salaire principal</name>
       <montant>1200</montant>
-	  <mise_en_place>0</mise_en_place>
+	  <echeance>0</echeance>
     </revenu>
 	<revenu>
       <name>Salaire principal</name>
       <montant>1230</montant>
-	  <mise_en_place>12</mise_en_place>
+	  <echeance>12</echeance>
     </revenu>
   </revenus>
   <apports>
