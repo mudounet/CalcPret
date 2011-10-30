@@ -59,11 +59,14 @@ foreach my $charge (@{$config->{revenus}->{revenu}}) {
 # Calcul des échéances
 #########################################################
 my $capital_restant_du = $output{"Cout total"};
-my $echeance = 0;
 my $dernier_revenu = $output{echeances}[0]{revenu};
+$output{synthese}{assurance} =0;
+$output{synthese}{interets_total} = 0;
+$output{synthese}{echeances} = 0;
 
 while($capital_restant_du > 0) {
-	$echeance++;
+	++$output{synthese}{echeances};
+	my $echeance = $output{synthese}{echeances};
 	INFO "Calcul de l'echeance $echeance (".($echeance/12).") ...";
 
 	####### Calcul du revenu à prendre en compte ########################
@@ -75,10 +78,13 @@ while($capital_restant_du > 0) {
 
 	####### Calcul du montant des interets ##########################
 	my $interets = 0;
+	
 	DEBUG "Montant des interets : $interets";
+
 	
 	####### Calcul du montant de l'assurance ########################
 	$output{echeances}[$echeance]{assurance} = ($config->{assurance}->{taux} /1200) * $capital_restant_du;	
+	$output{synthese}{assurance} += $output{echeances}[$echeance]{assurance};
 	DEBUG "Montant de l'assurance : $output{echeances}[$echeance]{assurance}";
 
 	
@@ -89,7 +95,7 @@ while($capital_restant_du > 0) {
 }
 
 
-print Dumper(\%output);
+print Dumper($output{synthese});
 
 __END__
 :endofperl
