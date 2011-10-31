@@ -58,10 +58,38 @@ foreach my $charge (@{$config->{revenus}->{revenu}}) {
 #########################################################
 $output{"Apports personnels"} = 0;
 foreach my $charge (@{$config->{apports}->{apport}}) {
-	INFO "Déduction de l'apport \"$charge->{name}\" du bien immobilier";
+	INFO "Deduction de l'apport \"$charge->{name}\" du bien immobilier";
 	
 	$output{"Apports personnels"} += $charge->{montant};
 }
+
+#########################################################
+# Calcul des différents prêts
+#########################################################
+my %prets;
+my $pret_sans_montant = undef;
+foreach my $pret (@{$config->{prets}->{pret}}) {
+	INFO "Calcul des parametres du pret \"$pret->{name}\"";
+	my %param_pret = ( capital => $pret->{montant}, mensualites => $pret->{mensualites}, echeances => $pret->{echeances}, taux => $pret->{taux});
+	if(ref($pret->{montant}) eq "" && $pret->{montant} > 0) {
+		DEBUG "Pret renseigne trouve";
+		%param_pret = completer_donnees_pret(%param_pret);
+	} else {
+		if(!$pret_sans_montant) {
+			DEBUG "Pret sans montant detecte";
+			$pret_sans_montant = \%param_pret;
+		}
+		else {
+			LOGDIE "Plusieurs prets sans montant detectes."
+		}
+	}
+}
+
+if($pret_sans_montant) {
+	INFO "Calcul du montant à partir des autres prets.";
+}
+
+
 
 #########################################################
 # Calcul des échéances
@@ -77,7 +105,7 @@ while($capital_restant_du > 0) {
 	++$output{synthese}{echeances};
 	my $echeance = $output{synthese}{echeances};
 
-	INFO "Calcul de l'echeance $echeance (".($echeance/12).") ...";
+	DEBUG "Calcul de l'echeance $echeance (".($echeance/12).") ...";
 
 	####### Calcul du revenu à prendre en compte ########################
 	$dernier_revenu = $output{echeances}[$echeance]{revenu} if($output{echeances}[$echeance]{revenu});
@@ -112,6 +140,32 @@ print FILE Dumper(\%output);
 close FILE;
 
 print Dumper($output{synthese});
+
+############################################################################
+# Fonctions de calcul
+############################################################################
+sub completer_donnees_pret {
+	my (%param_pret) = @_;
+	if(!($param_pret{taux} && $param_pret{capital} && $param_pret{echeances})) {
+		LOGDIE "Donnees incompletes : ".Dumper(\%param_pret);
+	}
+	elsif (!$param_pret{mensualite}) {
+		%param_pret = calc_mensualites(%param_pret);
+		return %param_pret;	
+	} else {
+		LOGDIE "Mode de calcul non défini.";
+	}
+}
+
+sub calc_mensualites {
+	my (%param_pret) = @_;
+	DEBUG Dumper %param_pret;
+	my $taux = $param_pret{taux} / 1200;
+	my $capital = $param_pret{capital};
+	my $echeances = $param_pret{echeances};
+	$param_pret{mensualites} = $capital * $taux / ( 1 - 1/((1 + $taux)**($echeances)));
+	return %param_pret;
+}
 
 __END__
 :endofperl

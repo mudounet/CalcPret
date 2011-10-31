@@ -35,8 +35,14 @@
   <prets>
     <pret>
       <name>PAS</name>
-      <montant>94500</montant>
+      <montant>0</montant>
       <taux>4</taux>
+    </pret>
+	<pret>
+      <name>Pret action logement</name>
+      <montant>20000</montant>
+      <taux>1,75</taux>
+	  <echeances>180</echeances>
     </pret>
     <pret2>
       <name>PTZ (BBC en CUS)</name>
