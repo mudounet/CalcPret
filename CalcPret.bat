@@ -68,7 +68,7 @@ foreach my $charge (@{$config->{revenus}->{revenu}}) {
 # Calcul des différents prêts
 #########################################################
 my %prets;
-my $pret_sans_montant = undef;
+my $pret_sans_montant_ref = undef;
 my $restant_pret = $output{"Cout total"} - $output{"Apports personnels"};
 foreach my $pret (@{$config->{prets}->{pret}}) {
 	INFO "Calcul des parametres du pret \"$pret->{name}\"";
@@ -77,10 +77,11 @@ foreach my $pret (@{$config->{prets}->{pret}}) {
 		DEBUG "Pret renseigne trouve";
 		%param_pret = completer_donnees_pret(%param_pret);
 		$restant_pret -= $param_pret{capital}; 
+		$prets{$pret->{name}} = \%param_pret;
 	} else {
-		if(!$pret_sans_montant) {
+		if(!$pret_sans_montant_ref) {
 			DEBUG "Pret sans montant detecte";
-			$pret_sans_montant = \%param_pret;
+			$pret_sans_montant_ref = \%param_pret;
 		}
 		else {
 			LOGDIE "Plusieurs prets sans montant detectes."
@@ -88,23 +89,28 @@ foreach my $pret (@{$config->{prets}->{pret}}) {
 	}
 }
 
-if($pret_sans_montant) {
-	INFO "Calcul du montant à partir des autres prets.";
-	$pret_sans_montant->{capital} = $restant_pret;
+if($pret_sans_montant_ref) {
+	INFO "Calcul du montant a partir des autres prets.";
+	$pret_sans_montant_ref->{capital} = $restant_pret;
 }
+my %pret_sans_montant = %$pret_sans_montant_ref;
 
 
 
 #########################################################
 # Calcul des échéances
 #########################################################
-my %pret_detail = calcul_detail_echeances(\%$pret_sans_montant, \@echeances);
+my @echeances_autres_prets;
+while (my ($key, $value) = each(%prets)){
+    DEBUG "Calcul des echeances du pret \"".$key."\"";
+	my %pret_detail = calcul_detail_echeances($value, \@echeances, \@echeances_autres_prets);
+	
+	open FILE,">details_$key.txt";
+	print FILE Dumper(\%pret_detail);
+	close FILE;
+}
 
-open FILE,">output.txt";
-print FILE Dumper(\%pret_detail);
-close FILE;
-
-print Dumper($output{synthese});
+#print Dumper($output{synthese});
 
 ############################################################################
 # Fonctions de calcul
@@ -120,7 +126,7 @@ sub calcul_detail_echeances {
 
 	my $dernier_revenu = $echeances[0]{revenu};
 	$donnees_pret{synthese}{assurance} = 0;
-	$donnees_pret{synthese}{interets_total} = 0;
+	$donnees_pret{synthese}{interets} = 0;
 	$donnees_pret{synthese}{echeances} = 0;
 
 	while($capital_restant_du > 0) {
@@ -129,28 +135,26 @@ sub calcul_detail_echeances {
 
 		DEBUG "Calcul de l'echeance $echeance (".($echeance/12).") ...";
 
-		####### Calcul du revenu à prendre en compte ########################
-		$dernier_revenu = $donnees_pret{echeances}[$echeance]{revenu} if($donnees_pret{echeances}[$echeance]{revenu});
-		$donnees_pret{echeances}[$echeance]{revenu} = $dernier_revenu;
-
 		####### Calcul du montant des interets ##########################
-		my $interets = 0;
-		
-		DEBUG "Montant des interets : $interets";
-
+		$donnees_pret{echeances}[$echeance]{interets} = ($param_pret{taux}/1200)*$capital_restant_du;
+		$donnees_pret{synthese}{interets} += $donnees_pret{echeances}[$echeance]{interets};
+		DEBUG "Montant des interets : $donnees_pret{echeances}[$echeance]{interets}";
 		
 		####### Calcul du montant de l'assurance ########################
 		$donnees_pret{echeances}[$echeance]{assurance} = ($config->{assurance}->{taux} /1200) * $capital_restant_du;	
 		$donnees_pret{synthese}{assurance} += $donnees_pret{echeances}[$echeance]{assurance};
 		DEBUG "Montant de l'assurance : $donnees_pret{echeances}[$echeance]{assurance}";
 
-		
+		####### Calcul du revenu à prendre en compte ########################
+		$dernier_revenu = $donnees_pret{echeances}[$echeance]{revenu} if($donnees_pret{echeances}[$echeance]{revenu});
+		$donnees_pret{echeances}[$echeance]{revenu} = $dernier_revenu;	
+	
 		####### Calcul du capital remboursé #############################
 		if($capital_restant_du < $dernier_revenu) {
 			$donnees_pret{echeances}[$echeance]{capital_rembourse} = $capital_restant_du;
 		}
 		else {
-			$donnees_pret{echeances}[$echeance]{capital_rembourse} = $dernier_revenu - $interets - $donnees_pret{echeances}[$echeance]{assurance};
+			$donnees_pret{echeances}[$echeance]{capital_rembourse} = $dernier_revenu - $donnees_pret{echeances}[$echeance]{interets} - $donnees_pret{echeances}[$echeance]{assurance};
 		}
 		
 		$capital_restant_du = $capital_restant_du - $donnees_pret{echeances}[$echeance]{capital_rembourse};

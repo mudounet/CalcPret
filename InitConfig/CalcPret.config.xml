@@ -39,9 +39,9 @@
       <taux>4</taux>
     </pret>
 	<pret>
-      <name>Pret action logement</name>
+      <name>PAL</name>
       <montant>20000</montant>
-      <taux>1,75</taux>
+      <taux>1.75</taux>
 	  <echeances>180</echeances>
     </pret>
     <pret2>
