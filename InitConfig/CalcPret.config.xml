@@ -35,7 +35,7 @@
   <prets>
     <pret>
       <name>PAS</name>
-      <montant>0</montant>
+      <montant></montant>
       <taux>4</taux>
     </pret>
 	<pret>
