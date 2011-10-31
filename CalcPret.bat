@@ -75,7 +75,7 @@ foreach my $pret (@{$config->{prets}->{pret}}) {
 	my %param_pret = ( capital => $pret->{montant}, mensualites => $pret->{mensualites}, echeances => $pret->{echeances}, taux => $pret->{taux});
 	if(ref($pret->{montant}) eq "" && $pret->{montant} > 0) {
 		DEBUG "Pret renseigne trouve";
-		%param_pret = completer_donnees_pret(%param_pret);
+		%param_pret = completer_donnees_pret(\%param_pret, $config->{assurance}->{taux});
 		$restant_pret -= $param_pret{capital}; 
 		$prets{$pret->{name}} = \%param_pret;
 	} else {
@@ -124,7 +124,7 @@ sub calcul_detail_echeances {
 	my $capital_restant_du = $param_pret{capital};
 	$donnees_pret{echeances}[0]{capital_a_rembourser} = $capital_restant_du;
 
-	my $dernier_revenu = $echeances[0]{revenu};
+	#my $dernier_revenu = $echeances[0]{revenu};
 	$donnees_pret{synthese}{assurance} = 0;
 	$donnees_pret{synthese}{interets} = 0;
 	$donnees_pret{synthese}{echeances} = 0;
@@ -146,15 +146,18 @@ sub calcul_detail_echeances {
 		DEBUG "Montant de l'assurance : $donnees_pret{echeances}[$echeance]{assurance}";
 
 		####### Calcul du revenu à prendre en compte ########################
-		$dernier_revenu = $donnees_pret{echeances}[$echeance]{revenu} if($donnees_pret{echeances}[$echeance]{revenu});
-		$donnees_pret{echeances}[$echeance]{revenu} = $dernier_revenu;	
+		my $montant_echeance = $param_pret{mensualites};
+		if(!$montant_echeance) {
+			$montant_echeance = $donnees_pret{echeances}[$echeance]{echeance} if($donnees_pret{echeances}[$echeance]{revenu});
+		}
+		$donnees_pret{echeances}[$echeance]{echeance} = $montant_echeance;	
 	
 		####### Calcul du capital remboursé #############################
-		if($capital_restant_du < $dernier_revenu) {
+		if($capital_restant_du < $montant_echeance) {
 			$donnees_pret{echeances}[$echeance]{capital_rembourse} = $capital_restant_du;
 		}
 		else {
-			$donnees_pret{echeances}[$echeance]{capital_rembourse} = $dernier_revenu - $donnees_pret{echeances}[$echeance]{interets} - $donnees_pret{echeances}[$echeance]{assurance};
+			$donnees_pret{echeances}[$echeance]{capital_rembourse} = $montant_echeance - $donnees_pret{echeances}[$echeance]{interets} - $donnees_pret{echeances}[$echeance]{assurance};
 		}
 		
 		$capital_restant_du = $capital_restant_du - $donnees_pret{echeances}[$echeance]{capital_rembourse};
@@ -164,25 +167,25 @@ sub calcul_detail_echeances {
 }
 
 sub completer_donnees_pret {
-	my (%param_pret) = @_;
-	if(!($param_pret{taux} && $param_pret{capital} && $param_pret{echeances})) {
-		LOGDIE "Donnees incompletes : ".Dumper(\%param_pret);
+	my ($param_pret, $taux_assurance) = @_;
+	if(!($param_pret->{taux} && $param_pret->{capital} && $param_pret->{echeances})) {
+		LOGDIE "Donnees incompletes : ".Dumper($param_pret);
 	}
-	elsif (!$param_pret{mensualite}) {
-		%param_pret = calc_mensualites(%param_pret);
-		return %param_pret;	
+	elsif (!$param_pret->{mensualite}) {
+		return calc_mensualites($param_pret, $taux_assurance);	
 	} else {
 		LOGDIE "Mode de calcul non défini.";
 	}
 }
 
 sub calc_mensualites {
-	my (%param_pret) = @_;
-	my $taux = $param_pret{taux} / 1200;
-	my $capital = $param_pret{capital};
-	my $echeances = $param_pret{echeances};
-	$param_pret{mensualites} = $capital * $taux / ( 1 - 1/((1 + $taux)**($echeances)));
-	return %param_pret;
+	my ($param_pret, $taux_assurance) = @_;
+	$taux_assurance = 0 unless $taux_assurance;
+	my $taux = ($param_pret->{taux} + $taux_assurance) / 1200;
+	my $capital = $param_pret->{capital};
+	my $echeances = $param_pret->{echeances};
+	$param_pret->{mensualites} = $capital * $taux / ( 1 - 1/((1 + $taux)**($echeances)));
+	return %$param_pret;
 }
 
 __END__
