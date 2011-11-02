@@ -110,11 +110,11 @@ while (my ($nom_pret, $pret) = each(%prets)){
 	my %pret_detail;
 	if($pret->{periodes}) {
 		foreach my $periode (@{$pret->{periodes}}) {
-			%pret_detail = calcul_detail_echeances($pret, $periode, \%pret_detail);
+			%pret_detail = calcul_detail_echeances($pret, $periode, \%pret_detail, \@echeances_autres_prets);
 		}
 	}
 	else {
-		%pret_detail = calcul_detail_echeances($pret);
+		%pret_detail = calcul_detail_echeances($pret, undef, undef, \@echeances_autres_prets);
 	}
 	
 	
@@ -123,13 +123,16 @@ while (my ($nom_pret, $pret) = each(%prets)){
 	close FILE;
 }
 
-#print Dumper($output{synthese});
+open FILE,">details_echeances.txt";
+print FILE Dumper(\@echeances_autres_prets);
+close FILE;
+
 
 ############################################################################
 # Fonctions de calcul
 ############################################################################
 sub calcul_detail_echeances {
-	my ($param_pret_ref, $autres_parametres_prets_ref, $anciennes_periodes_ref ) = @_;
+	my ($param_pret_ref, $autres_parametres_prets_ref, $anciennes_periodes_ref, $echeances_autres_prets_ref) = @_;
 	my %param_pret = %$param_pret_ref;
 
 	my (%donnees_pret, %autres_parametres_prets, %anciennes_periodes);
@@ -162,6 +165,7 @@ sub calcul_detail_echeances {
 		
 		my $echeance = $donnees_pret{synthese}{echeances} + $echeances_periode;
 
+
 		DEBUG "Calcul de l'echeance $echeance (".($echeance/12).") ...";
 
 		####### Calcul du montant des interets ##########################
@@ -177,6 +181,7 @@ sub calcul_detail_echeances {
 		####### Calcul du revenu à prendre en compte ########################
 		my $montant_echeance_calcule = $autres_parametres_prets{montant_hors_charges} ? $autres_parametres_prets{montant_hors_charges} + $interets + $assurance : $montant_echeance;
 		
+		$echeances_autres_prets_ref->[$echeance] = $echeances_autres_prets_ref->[$echeance] ? $echeances_autres_prets_ref->[$echeance] + $montant_echeance_calcule : $montant_echeance_calcule;
 		$donnees_pret{echeances}[$echeance]{montant_echeance} = $montant_echeance_calcule;
 	
 	
