@@ -116,9 +116,8 @@ while (my ($key, $value) = each(%prets)){
 # Fonctions de calcul
 ############################################################################
 sub calcul_detail_echeances {
-	my ($param_pret_ref, $echeances_ref) = @_;
+	my ($param_pret_ref) = @_;
 	my %param_pret = %$param_pret_ref;
-	my @echeances = @$echeances_ref;
 	my %donnees_pret;
 	
 	my $capital_restant_du = $param_pret{capital};
