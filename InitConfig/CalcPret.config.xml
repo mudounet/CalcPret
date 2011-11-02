@@ -50,11 +50,11 @@
       <taux>0</taux>
       <periodes>
         <mensualite>
-          <montant>188</montant>
+          <montant_hors_charges>188</montant_hors_charges>
           <echeances>276</echeances>
         </mensualite>
         <mensualite>
-          <montant>504</montant>
+          <montant_hors_charges>504</montant_hors_charges>
           <echeances>84</echeances>
         </mensualite>
       </periodes>

@@ -165,28 +165,37 @@ sub calcul_detail_echeances {
 		DEBUG "Calcul de l'echeance $echeance (".($echeance/12).") ...";
 
 		####### Calcul du montant des interets ##########################
-		$donnees_pret{echeances}[$echeance]{interets} = ($param_pret{taux}/1200)*$capital_restant_du;
-		$donnees_pret{synthese}{interets} += $donnees_pret{echeances}[$echeance]{interets};
-		DEBUG "Montant des interets : $donnees_pret{echeances}[$echeance]{interets}";
+		my $interets = ($param_pret{taux}/1200) * $capital_restant_du;
+		
+		DEBUG "Montant des interets : $interets";
 		
 		####### Calcul du montant de l'assurance ########################
-		$donnees_pret{echeances}[$echeance]{assurance} = ($config->{assurance}->{taux} /1200) * $capital_restant_du;	
-		$donnees_pret{synthese}{assurance} += $donnees_pret{echeances}[$echeance]{assurance};
-		DEBUG "Montant de l'assurance : $donnees_pret{echeances}[$echeance]{assurance}";
+		my $assurance = ($config->{assurance}->{taux} /1200) * $capital_restant_du;	
+
+		DEBUG "Montant de l'assurance : $assurance";
 
 		####### Calcul du revenu à prendre en compte ########################
-		$donnees_pret{echeances}[$echeance]{montant_echeance} = $montant_echeance;	
+		my $montant_echeance_calcule = $autres_parametres_prets{montant_hors_charges} ? $autres_parametres_prets{montant_hors_charges} + $interets + $assurance : $montant_echeance;
+		
+		$donnees_pret{echeances}[$echeance]{montant_echeance} = $montant_echeance_calcule;
+	
 	
 		####### Calcul du capital remboursé #############################
-		if($capital_restant_du < $montant_echeance) {
+		if($capital_restant_du < $montant_echeance_calcule) {
 			$donnees_pret{echeances}[$echeance]{capital_rembourse} = $capital_restant_du;
 		}
 		else {
-			$donnees_pret{echeances}[$echeance]{capital_rembourse} = $montant_echeance - $donnees_pret{echeances}[$echeance]{interets} - $donnees_pret{echeances}[$echeance]{assurance};
+			$donnees_pret{echeances}[$echeance]{capital_rembourse} = $montant_echeance_calcule - $interets - $assurance;
 		}
-		
+		$donnees_pret{echeances}[$echeance]{assurance} = $assurance;
+		$donnees_pret{echeances}[$echeance]{interets} = $interets;
 		$capital_restant_du = $capital_restant_du - $donnees_pret{echeances}[$echeance]{capital_rembourse};
+		
+		
 		$donnees_pret{echeances}[$echeance]{capital_a_rembourser} = $capital_restant_du;
+		###################################
+		$donnees_pret{synthese}{interets} += $interets;
+		$donnees_pret{synthese}{assurance} +=$assurance;
 	}
 	
 	$donnees_pret{synthese}{echeances} = $donnees_pret{synthese}{echeances} + $echeances_periode;
