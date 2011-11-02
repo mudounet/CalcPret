@@ -72,11 +72,14 @@ my $pret_sans_montant_ref = undef;
 my $restant_pret = $output{"Cout total"} - $output{"Apports personnels"};
 foreach my $pret (@{$config->{prets}->{pret}}) {
 	INFO "Calcul des parametres du pret \"$pret->{name}\"";
-	my %param_pret = ( capital => $pret->{montant}, mensualites => $pret->{mensualites}, echeances => $pret->{echeances}, taux => $pret->{taux});
+	my %param_pret = ( capital => $pret->{montant}, mensualites => $pret->{mensualites}, echeances => $pret->{echeances}, taux => $pret->{taux}, periodes => $pret->{periodes}->{mensualite});
 	if(ref($pret->{montant}) eq "" && $pret->{montant} > 0) {
 		DEBUG "Pret renseigne trouve";
+		
+		
 		%param_pret = completer_donnees_pret(\%param_pret, $config->{assurance}->{taux});
 		$restant_pret -= $param_pret{capital}; 
+		
 		$prets{$pret->{name}} = \%param_pret;
 	} else {
 		if(!$pret_sans_montant_ref) {
@@ -101,11 +104,21 @@ my %pret_sans_montant = %$pret_sans_montant_ref;
 # Calcul des échéances
 #########################################################
 my @echeances_autres_prets;
-while (my ($key, $value) = each(%prets)){
-    DEBUG "Calcul des echeances du pret \"".$key."\"";
-	my %pret_detail = calcul_detail_echeances($value, \@echeances, \@echeances_autres_prets);
+while (my ($nom_pret, $pret) = each(%prets)){
+    DEBUG "Calcul des echeances du pret \"".$nom_pret."\"";
 	
-	open FILE,">details_$key.txt";
+	my %pret_detail;
+	if($pret->{periodes}) {
+		foreach my $periode (@{$pret->{periodes}}) {
+			%pret_detail = calcul_detail_echeances($pret, $periode, \%pret_detail);
+		}
+	}
+	else {
+		%pret_detail = calcul_detail_echeances($pret);
+	}
+	
+	
+	open FILE,">details_$nom_pret.txt";
 	print FILE Dumper(\%pret_detail);
 	close FILE;
 }
@@ -116,21 +129,38 @@ while (my ($key, $value) = each(%prets)){
 # Fonctions de calcul
 ############################################################################
 sub calcul_detail_echeances {
-	my ($param_pret_ref) = @_;
+	my ($param_pret_ref, $autres_parametres_prets_ref, $anciennes_periodes_ref ) = @_;
 	my %param_pret = %$param_pret_ref;
-	my %donnees_pret;
+
+	my (%donnees_pret, %autres_parametres_prets, %anciennes_periodes);
+	%autres_parametres_prets = %$autres_parametres_prets_ref if $autres_parametres_prets_ref;
+	%anciennes_periodes = %$anciennes_periodes_ref if $anciennes_periodes_ref;
 	
-	my $capital_restant_du = $param_pret{capital};
-	$donnees_pret{echeances}[0]{capital_a_rembourser} = $capital_restant_du;
+	my $capital_restant_du;
 
-	#my $dernier_revenu = $echeances[0]{revenu};
-	$donnees_pret{synthese}{assurance} = 0;
-	$donnees_pret{synthese}{interets} = 0;
-	$donnees_pret{synthese}{echeances} = 0;
+	if (%anciennes_periodes) {
+		%donnees_pret = %anciennes_periodes;
+		$capital_restant_du = $donnees_pret{echeances}[$donnees_pret{synthese}{echeances}]{capital_a_rembourser};
+	}
+	else {
+		$capital_restant_du = $param_pret{capital};
+		$donnees_pret{synthese}{assurance} = 0;
+		$donnees_pret{synthese}{interets} = 0;
+		$donnees_pret{synthese}{echeances} = 0;
+		$donnees_pret{echeances}[0]{capital_a_rembourser} = $capital_restant_du;
+	}
+	
+	my $montant_echeance = $param_pret{mensualites};
+	$montant_echeance = $autres_parametres_prets{montant} if $autres_parametres_prets{montant};
 
-	while($capital_restant_du > 0) {
-		++$donnees_pret{synthese}{echeances};
-		my $echeance = $donnees_pret{synthese}{echeances};
+	my $echeances_periode = 0;
+	my $periode_calculee;
+	while($capital_restant_du > 0 && !$periode_calculee) {
+		
+		$echeances_periode++;
+		$periode_calculee = 1 if ($autres_parametres_prets{echeances} && $echeances_periode >= $autres_parametres_prets{echeances});
+		
+		my $echeance = $donnees_pret{synthese}{echeances} + $echeances_periode;
 
 		DEBUG "Calcul de l'echeance $echeance (".($echeance/12).") ...";
 
@@ -145,11 +175,7 @@ sub calcul_detail_echeances {
 		DEBUG "Montant de l'assurance : $donnees_pret{echeances}[$echeance]{assurance}";
 
 		####### Calcul du revenu à prendre en compte ########################
-		my $montant_echeance = $param_pret{mensualites};
-		if(!$montant_echeance) {
-			$montant_echeance = $donnees_pret{echeances}[$echeance]{echeance} if($donnees_pret{echeances}[$echeance]{revenu});
-		}
-		$donnees_pret{echeances}[$echeance]{echeance} = $montant_echeance;	
+		$donnees_pret{echeances}[$echeance]{montant_echeance} = $montant_echeance;	
 	
 		####### Calcul du capital remboursé #############################
 		if($capital_restant_du < $montant_echeance) {
@@ -161,12 +187,20 @@ sub calcul_detail_echeances {
 		
 		$capital_restant_du = $capital_restant_du - $donnees_pret{echeances}[$echeance]{capital_rembourse};
 		$donnees_pret{echeances}[$echeance]{capital_a_rembourser} = $capital_restant_du;
-	}	
+	}
+	
+	$donnees_pret{synthese}{echeances} = $donnees_pret{synthese}{echeances} + $echeances_periode;
 	return %donnees_pret;
 }
 
 sub completer_donnees_pret {
 	my ($param_pret, $taux_assurance) = @_;
+	
+	DEBUG ref($param_pret->{periodes});
+	if((ref($param_pret->{periodes}) eq "ARRAY") && $param_pret->{capital}) {
+		return %$param_pret;
+	}
+	
 	if(!($param_pret->{taux} && $param_pret->{capital} && $param_pret->{echeances})) {
 		LOGDIE "Donnees incompletes : ".Dumper($param_pret);
 	}

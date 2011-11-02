@@ -44,21 +44,21 @@
       <taux>1.75</taux>
 	  <echeances>180</echeances>
     </pret>
-    <pret2>
+    <pret>
       <name>PTZ (BBC en CUS)</name>
       <montant>94500</montant>
       <taux>0</taux>
-      <mensualites>
+      <periodes>
         <mensualite>
           <montant>188</montant>
-          <duree>276</duree>
+          <echeances>276</echeances>
         </mensualite>
         <mensualite>
           <montant>504</montant>
-          <duree>84</duree>
+          <echeances>84</echeances>
         </mensualite>
-      </mensualites>
-    </pret2>
+      </periodes>
+    </pret>
   </prets>
   <assurance>
     <name>Assurance</name>
