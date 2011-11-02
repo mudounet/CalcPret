@@ -76,7 +76,6 @@ foreach my $pret (@{$config->{prets}->{pret}}) {
 	if(ref($pret->{montant}) eq "" && $pret->{montant} > 0) {
 		DEBUG "Pret renseigne trouve";
 		
-		
 		%param_pret = completer_donnees_pret(\%param_pret, $config->{assurance}->{taux});
 		$restant_pret -= $param_pret{capital}; 
 		
