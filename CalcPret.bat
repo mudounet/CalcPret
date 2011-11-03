@@ -319,12 +319,17 @@ sub ecrire_sortie_html {
 	my @liste_echeances;
 	my $echeance_trouve = 1;
 	my $echeance = 0;
+	my %echeance_recap;
+	$echeance_recap{MONTANT_ECHEANCE} = 0;
+	$echeance_recap{ASSURANCE} = 0;
+	$echeance_recap{INTERETS} = 0;
+	$echeance_recap{CAPITAL_RESTANT} = 0;
+	$echeance_recap{CAPITAL_REMBOURSE} = 0;
+	
 	while($echeance_trouve) {
 		$echeance++;
 		my %echeance;
 
-		$echeance{ECHEANCE_RECAP} = 0;
-		
 		$echeance_trouve = 0;
 		
 		$echeance{LABEL} = $echeance;
@@ -347,11 +352,46 @@ sub ecrire_sortie_html {
 		}
 
 		DEBUG "Calcul de l'échéance $echeance";
-		if(!$echeance_trouve) {
-			$echeance{LABEL} = "";
-			$echeance{ECHEANCE_RECAP} = 1;
+		
+		if($echeance_trouve) {
+			push(@liste_echeances, filtrer_ligne_echeancier(%echeance));
 		}
-		push(@liste_echeances, \%echeance);
+		
+		if($echeance % 12 == 0 || !$echeance_trouve) {
+
+			$echeance{ECHEANCE_RECAP} = 1;
+			$echeance{MONTANT_ECHEANCE} = $echeance_recap{MONTANT_ECHEANCE};
+			$echeance{ASSURANCE} = $echeance_recap{ASSURANCE};
+			$echeance{INTERETS} = $echeance_recap{INTERETS};
+			$echeance{CAPITAL_RESTANT} = $echeance_recap{CAPITAL_RESTANT};
+			$echeance{CAPITAL_REMBOURSE} = $echeance_recap{CAPITAL_REMBOURSE};
+
+
+			
+			if(!$echeance_trouve) {
+				$echeance{LABEL} = "Total";
+				last if $echeance_recap{MONTANT_ECHEANCE} == 0;
+				$echeance{CAPITAL_RESTANT} = 0;
+			}
+			else {
+				$echeance{LABEL} = "Annee ".$echeance/12;
+				$echeance{CAPITAL_RESTANT} = "";
+				$echeance_recap{MONTANT_ECHEANCE} = 0;
+				$echeance_recap{ASSURANCE} = 0;
+				$echeance_recap{INTERETS} = 0;
+				$echeance_recap{CAPITAL_RESTANT} = 0;
+				$echeance_recap{CAPITAL_REMBOURSE} = 0;
+			}
+			push(@liste_echeances, filtrer_ligne_echeancier(%echeance));
+		}
+		else {
+			$echeance{ECHEANCE_RECAP} = 0;
+			$echeance_recap{MONTANT_ECHEANCE} += $echeance{MONTANT_ECHEANCE};
+			$echeance_recap{ASSURANCE} += $echeance{ASSURANCE};
+			$echeance_recap{INTERETS} += $echeance{INTERETS};
+			$echeance_recap{CAPITAL_RESTANT} = $echeance{CAPITAL_RESTANT};
+			$echeance_recap{CAPITAL_REMBOURSE} += $echeance{CAPITAL_REMBOURSE};
+		}
 	}
 	
 	$mainTemplate->param(ECHEANCES_GLOBALES => \@liste_echeances);
@@ -365,6 +405,19 @@ sub ecrire_sortie_html {
 sub tronquer_chiffre {
 	my ($valeur) = @_;
 	return sprintf("%.2f", $valeur);
+}
+
+sub filtrer_ligne_echeancier {
+	my (%echeance) = @_;
+	
+	$echeance{MONTANT_ECHEANCE} = tronquer_chiffre($echeance{MONTANT_ECHEANCE});
+	$echeance{ASSURANCE} = tronquer_chiffre($echeance{ASSURANCE});
+	$echeance{INTERETS} = tronquer_chiffre($echeance{INTERETS});
+	$echeance{CAPITAL_RESTANT} = tronquer_chiffre($echeance{CAPITAL_RESTANT}) if $echeance{CAPITAL_RESTANT};
+	$echeance{CAPITAL_REMBOURSE} = tronquer_chiffre($echeance{CAPITAL_REMBOURSE}) if $echeance{CAPITAL_REMBOURSE};
+	
+	return \%echeance;
+
 }
 
 __END__
