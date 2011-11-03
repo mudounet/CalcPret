@@ -140,10 +140,10 @@ if($pret_sans_montant_ref ) {
 $calculs_prets{echeances} = \@echeances_autres_prets;
 
 open FILE,">recapitulatif.txt";
-print FILE Dumper(\%prets);
+print FILE Dumper(\%calculs_prets);
 close FILE;
 
-ecrire_sortie_html (\%calculs_prets, \%prets, "resultats.html");
+ecrire_sortie_html (\%calculs_prets, "resultats.html");
 
 
 ############################################################################
@@ -274,7 +274,7 @@ sub calc_mensualites {
 }
 
 sub ecrire_sortie_html {
-	my ($resultats_prets, $donnees_prets ,$fichier) = @_;
+	my ($resultats_prets, $fichier) = @_;
 	
 	
 		open OUTFILE, ">$fichier";
@@ -283,6 +283,10 @@ sub ecrire_sortie_html {
 	my $mainTemplate = HTML::Template -> new( die_on_bad_params => 1, filename => $template_file );
 			
 	my @recap_liste_prets;
+	
+	##############################################
+	##### Récapitulatif des prêts
+	##############################################
 	
 	while(my ($nom, $pret) = each(%{$resultats_prets->{prets}})) {
 		INFO "$nom";
@@ -300,7 +304,7 @@ sub ecrire_sortie_html {
 
 		push(@recap_liste_prets, \%proprietes);
 	}
-			
+	
 	$mainTemplate->param(PRETS_RECAP => \@recap_liste_prets);
 	$mainTemplate->param(TOTAL_CAPITAL => $resultats_prets->{synthese}{capital});
 	$mainTemplate->param(TOTAL_DUREE => $resultats_prets->{synthese}{echeances});
@@ -308,7 +312,49 @@ sub ecrire_sortie_html {
 	$mainTemplate->param(TOTAL_TAUX_INTERET => tronquer_chiffre($resultats_prets->{synthese}{interets}));
 	$mainTemplate->param(TOTAL => tronquer_chiffre($resultats_prets->{synthese}{interets} + $resultats_prets->{synthese}{assurance}));
 	
-	#$mainTemplate->param(ECHEANCIER => \@list_connections_out);
+	##############################################
+	##### Echéancier général
+	##############################################
+	
+	my @liste_echeances;
+	my $echeance_trouve = 1;
+	my $echeance = 0;
+	while($echeance_trouve) {
+		$echeance++;
+		my %echeance;
+
+		$echeance{ECHEANCE_RECAP} = 0;
+		
+		$echeance_trouve = 0;
+		
+		$echeance{LABEL} = $echeance;
+		$echeance{MONTANT_ECHEANCE} = 0;
+		$echeance{ASSURANCE} = 0;
+		$echeance{INTERETS} = 0;
+		$echeance{CAPITAL_RESTANT} = 0;
+		$echeance{CAPITAL_REMBOURSE} = 0;
+		while(my ($nom, $pret) = each(%{$resultats_prets->{prets}})) {
+			my $donnees = $pret->{echeances}[$echeance];
+						
+			if($donnees) {
+				$echeance_trouve = 1;
+				$echeance{INTERETS} += $donnees->{interets};
+				$echeance{ASSURANCE} += $donnees->{assurance};
+				$echeance{CAPITAL_REMBOURSE} += $donnees->{capital_rembourse};
+				$echeance{MONTANT_ECHEANCE} += $donnees->{montant_echeance};
+				$echeance{CAPITAL_RESTANT} += $donnees->{capital_a_rembourser};
+			}
+		}
+
+		DEBUG "Calcul de l'échéance $echeance";
+		if(!$echeance_trouve) {
+			$echeance{LABEL} = "";
+			$echeance{ECHEANCE_RECAP} = 1;
+		}
+		push(@liste_echeances, \%echeance);
+	}
+	
+	$mainTemplate->param(ECHEANCES_GLOBALES => \@liste_echeances);
 
 
 	INFO "Generating $fichier";

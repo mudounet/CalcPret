@@ -391,62 +391,27 @@ h1{font-size:138.5%;}h2{font-size:123.1%;}h3{font-size:108%;}h1,h2,h3{margin:1em
               <td>Reste à rembourser<br>
               </td>
             </tr>
-            <tr>
-              <td><br>
-              </td>
-              <td style="vertical-align: top;"><br>
-              </td>
-              <td><br>
-              </td>
-              <td><br>
-              </td>
-              <td style="vertical-align: top;"><br>
-              </td>
-              <td style="vertical-align: top;"><br>
-              </td>
-            </tr>
-            <tr>
-              <td><br>
-              </td>
-              <td style="vertical-align: top;"><br>
-              </td>
-              <td><br>
-              </td>
-              <td><br>
-              </td>
-              <td style="vertical-align: top;"><br>
-              </td>
-              <td style="vertical-align: top;"><br>
-              </td>
-            </tr>
+			<TMPL_LOOP name=ECHEANCES_GLOBALES>
+			<TMPL_IF NAME="ECHEANCE_RECAP"> 
             <tr style="background-color: rgb(192, 192, 192);">
-              <td>1 année<br>
-              </td>
-              <td><br>
-              </td>
-              <td>Total_interets<br>
-              </td>
-              <td>Total_assurance<br>
-              </td>
-              <td>Total_capital<br>
-              </td>
-              <td><br>
-              </td>
+              <td><TMPL_VAR name=LABEL></td>
+              <td><TMPL_VAR name=MONTANT_ECHEANCE></td>
+              <td><TMPL_VAR name=INTERETS></td>
+              <td><TMPL_VAR name=ASSURANCE></td>
+              <td><TMPL_VAR name=CAPITAL_REMBOURSE></td>
+              <td><TMPL_VAR name=CAPITAL_RESTANT></td>
             </tr>
+			<TMPL_ELSE>
             <tr>
-              <td><br>
-              </td>
-              <td style="vertical-align: top;"><br>
-              </td>
-              <td><br>
-              </td>
-              <td><br>
-              </td>
-              <td style="vertical-align: top;"><br>
-              </td>
-              <td style="vertical-align: top;"><br>
-              </td>
+              <td><TMPL_VAR name=LABEL></td>
+              <td><TMPL_VAR name=MONTANT_ECHEANCE></td>
+              <td><TMPL_VAR name=INTERETS></td>
+              <td><TMPL_VAR name=ASSURANCE></td>
+              <td><TMPL_VAR name=CAPITAL_REMBOURSE></td>
+              <td><TMPL_VAR name=CAPITAL_RESTANT></td>
             </tr>
+			</TMPL_IF>
+			</TMPL_LOOP>
           </tbody>
         </table>
         <br>
