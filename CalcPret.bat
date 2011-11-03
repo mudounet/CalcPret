@@ -61,7 +61,7 @@ my @echeances;
 foreach my $charge (@{$config->{revenus}->{revenu}}) {
 	INFO "Traitement de la partie \"$charge->{name}\" du bien immobilier";
 	
-	$echeances[$charge->{echeance}]{revenu} += $charge->{montant};
+	$echeances[$charge->{echeance}]{montant} += $charge->{montant};
 }
 
 #########################################################
@@ -72,7 +72,7 @@ my $pret_sans_montant_ref = undef;
 my $restant_pret = $output{"Cout total"} - $output{"Apports personnels"};
 foreach my $pret (@{$config->{prets}->{pret}}) {
 	INFO "Calcul des parametres du pret \"$pret->{name}\"";
-	my %param_pret = ( capital => $pret->{montant}, mensualites => $pret->{mensualites}, echeances => $pret->{echeances}, taux => $pret->{taux}, periodes => $pret->{periodes}->{mensualite});
+	my %param_pret = ( nom => $pret->{name}, capital => $pret->{montant}, mensualites => $pret->{mensualites}, echeances => $pret->{echeances}, taux => $pret->{taux}, periodes => $pret->{periodes}->{mensualite});
 	if(ref($pret->{montant}) eq "" && $pret->{montant} > 0) {
 		DEBUG "Pret renseigne trouve";
 		
@@ -95,9 +95,6 @@ if($pret_sans_montant_ref) {
 	INFO "Calcul du montant a partir des autres prets.";
 	$pret_sans_montant_ref->{capital} = $restant_pret;
 }
-my %pret_sans_montant = %$pret_sans_montant_ref;
-
-
 
 #########################################################
 # Calcul des échéances
@@ -118,6 +115,15 @@ while (my ($nom_pret, $pret) = each(%prets)){
 	
 	
 	open FILE,">details_$nom_pret.txt";
+	print FILE Dumper(\%pret_detail);
+	close FILE;
+}
+
+if($pret_sans_montant_ref ) {
+	LOGDIE "revenus non renseignes et necessaires" unless ref $config->{revenus}->{revenu} eq "ARRAY";
+	my %pret_detail = calcul_detail_echeances($pret_sans_montant_ref, enveloppe_mensualites => $config->{revenus}->{revenu}, echeances_autre_pret => \@echeances_autres_prets);
+	
+	open FILE,">details_$pret_sans_montant_ref->{nom}.txt";
 	print FILE Dumper(\%pret_detail);
 	close FILE;
 }
@@ -159,6 +165,7 @@ sub calcul_detail_echeances {
 
 	my $echeances_periode = 0;
 	my $periode_calculee;
+	my $montant_echeance_dynamique = $options{enveloppe_mensualites}->[0]{montant} if $options{enveloppe_mensualites}->[0]{montant};
 	while($capital_restant_du > 0 && !$periode_calculee) {
 		
 		$echeances_periode++;
@@ -166,7 +173,8 @@ sub calcul_detail_echeances {
 		
 		my $echeance = $donnees_pret{synthese}{echeances} + $echeances_periode;
 
-
+		
+		
 		DEBUG "Calcul de l'echeance $echeance (".($echeance/12).") ...";
 
 		####### Calcul du montant des interets ##########################
@@ -180,7 +188,20 @@ sub calcul_detail_echeances {
 		DEBUG "Montant de l'assurance : $assurance";
 
 		####### Calcul du revenu à prendre en compte ########################
-		my $montant_echeance_calcule = $autres_parametres_prets{montant_hors_charges} ? $autres_parametres_prets{montant_hors_charges} + $interets + $assurance : $montant_echeance;
+		my $montant_echeance_calcule;
+		if($autres_parametres_prets{montant_hors_charges}) {
+			$montant_echeance_calcule = $autres_parametres_prets{montant_hors_charges} + $interets + $assurance;
+		}
+		elsif ($montant_echeance_dynamique) {
+			$montant_echeance_dynamique = $montant_echeance_dynamique = $options{enveloppe_mensualites}->[$echeance]{montant} if $options{enveloppe_mensualites}->[$echeance]{montant};
+			$montant_echeance_calcule = $montant_echeance_dynamique - $echeances_autres_prets_ref->[$echeance];
+		}
+		elsif(!$montant_echeance) {
+			LOGDIE "ERREUR DANS LE PROGRAMME";
+		}
+		else {
+			$montant_echeance_calcule = $montant_echeance;
+		}
 		
 		$echeances_autres_prets_ref->[$echeance] = $echeances_autres_prets_ref->[$echeance] ? $echeances_autres_prets_ref->[$echeance] + $montant_echeance_calcule : $montant_echeance_calcule;
 		$donnees_pret{echeances}[$echeance]{montant_echeance} = $montant_echeance_calcule;
