@@ -338,52 +338,34 @@ h1{font-size:138.5%;}h2{font-size:123.1%;}h3{font-size:108%;}h1,h2,h3{margin:1em
               <td width="12%">Durée <br>
               </td>
               <td width="12%">Interêts </td>
-              <td width="12%">Assurance (0,08) </td>
-              <td width="12%">Coût du prêt</td>
+              <td width="12%">Assurance </td>
+              <td width="12%"><span style="font-weight: bold;">Coût du prêt</span></td>
             </tr>
+			<TMPL_LOOP name=PRETS_RECAP>
             <tr>
-              <td>Pret 1 </td>
-              <td><br>
+              <td><TMPL_VAR name=NOM_PRET></td>
+              <td><TMPL_VAR name=CAPITAL_EMPRUNTE> €</td>
+              <td><TMPL_VAR name=TAUX> %</td>
+              <td><TMPL_VAR name=TOTAL_DUREE>
               </td>
-              <td><br>
+              <td style="vertical-align: top;"><TMPL_VAR name=TOTAL_TAUX_INTERET> €
               </td>
-              <td><br>
+              <td style="vertical-align: top;"><TMPL_VAR name=TOTAL_ASSURANCE> €
               </td>
-              <td style="vertical-align: top;"><br>
-              </td>
-              <td style="vertical-align: top;"><br>
-              </td>
-              <td style="vertical-align: top;"><span style="font-weight: bold;">Total</span><br>
+              <td style="vertical-align: top;"><span style="font-weight: bold;"><TMPL_VAR name=TOTAL> €</span>
               </td>
             </tr>
-            <tr>
-              <td style="vertical-align: top;">Pret 2 </td>
-              <td style="vertical-align: top;"><br>
-              </td>
-              <td style="vertical-align: top;"><br>
-              </td>
-              <td style="vertical-align: top;"><br>
-              </td>
-              <td style="vertical-align: top;"><br>
-              </td>
-              <td style="vertical-align: top;"><br>
-              </td>
-              <td style="vertical-align: top;"><span style="font-weight: bold;">Total</span><br>
-              </td>
-            </tr>
+			</TMPL_LOOP>
             <tr style="background-color: rgb(182, 192, 190);">
               <td>Total</td>
-              <td><br>
+              <td><TMPL_VAR name=TOTAL_CAPITAL></td>
+			  <td><br></td>
+              <td><TMPL_VAR name=TOTAL_DUREE></td>
+              <td><TMPL_VAR name=TOTAL_TAUX_INTERET> €
               </td>
-              <td><br>
+              <td><TMPL_VAR name=TOTAL_ASSURANCE> €
               </td>
-              <td><br>
-              </td>
-              <td><br>
-              </td>
-              <td><br>
-              </td>
-              <td><br>
+              <td><span style="font-weight: bold;"><TMPL_VAR name=TOTAL> €</span>
               </td>
             </tr>
           </tbody>

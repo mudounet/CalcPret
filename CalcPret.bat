@@ -104,6 +104,7 @@ my %calculs_prets;
 $calculs_prets{synthese}{interets} = 0;
 $calculs_prets{synthese}{assurance} = 0;
 $calculs_prets{synthese}{echeances} = 0;
+$calculs_prets{synthese}{capital} = 0;
 while (my ($nom_pret, $pret) = each(%prets)){
     DEBUG "Calcul des echeances du pret \"".$nom_pret."\"";
 	
@@ -117,7 +118,7 @@ while (my ($nom_pret, $pret) = each(%prets)){
 		%pret_detail = calcul_detail_echeances($pret, echeances_autre_pret => \@echeances_autres_prets);
 	}
 	
-	
+	$calculs_prets{synthese}{capital} += $pret_detail{synthese}{capital};
 	$calculs_prets{synthese}{interets} += $pret_detail{synthese}{interets};
 	$calculs_prets{synthese}{assurance} += $pret_detail{synthese}{assurance};
 	$calculs_prets{synthese}{echeances} = $pret_detail{synthese}{echeances} if $pret_detail{synthese}{echeances} > $calculs_prets{synthese}{echeances};
@@ -129,6 +130,7 @@ if($pret_sans_montant_ref ) {
 	my $nom_pret = $pret_sans_montant_ref->{nom};
 	my %pret_detail = calcul_detail_echeances($pret_sans_montant_ref, enveloppe_mensualites => $config->{revenus}->{revenu}, echeances_autre_pret => \@echeances_autres_prets);
 	
+	$calculs_prets{synthese}{capital} += $pret_detail{synthese}{capital};
 	$calculs_prets{synthese}{interets} += $pret_detail{synthese}{interets};
 	$calculs_prets{synthese}{assurance} += $pret_detail{synthese}{assurance};
 	$calculs_prets{synthese}{echeances} = $pret_detail{synthese}{echeances} if $pret_detail{synthese}{echeances} > $calculs_prets{synthese}{echeances};
@@ -138,8 +140,10 @@ if($pret_sans_montant_ref ) {
 $calculs_prets{echeances} = \@echeances_autres_prets;
 
 open FILE,">recapitulatif.txt";
-print FILE Dumper(\%calculs_prets);
+print FILE Dumper(\%prets);
 close FILE;
+
+ecrire_sortie_html (\%calculs_prets, \%prets, "resultats.html");
 
 
 ############################################################################
@@ -163,11 +167,14 @@ sub calcul_detail_echeances {
 	}
 	else {
 		$capital_restant_du = $param_pret{capital};
+		$donnees_pret{synthese}{capital} = $capital_restant_du;
 		$donnees_pret{synthese}{assurance} = 0;
 		$donnees_pret{synthese}{interets} = 0;
 		$donnees_pret{synthese}{echeances} = 0;
+		$donnees_pret{synthese}{taux} = $param_pret{taux};
 		$donnees_pret{echeances}[0]{capital_a_rembourser} = $capital_restant_du;
 	}
+	
 	
 	my $montant_echeance = $param_pret{mensualites};
 	$montant_echeance = $autres_parametres_prets{montant} if $autres_parametres_prets{montant};
@@ -264,6 +271,54 @@ sub calc_mensualites {
 	my $echeances = $param_pret->{echeances};
 	$param_pret->{mensualites} = $capital * $taux / ( 1 - 1/((1 + $taux)**($echeances)));
 	return %$param_pret;
+}
+
+sub ecrire_sortie_html {
+	my ($resultats_prets, $donnees_prets ,$fichier) = @_;
+	
+	
+		open OUTFILE, ">$fichier";
+	
+	my $template_file = 'InitConfig/template.tmpl';
+	my $mainTemplate = HTML::Template -> new( die_on_bad_params => 1, filename => $template_file );
+			
+	my @recap_liste_prets;
+	
+	while(my ($nom, $pret) = each(%{$resultats_prets->{prets}})) {
+		INFO "$nom";
+		
+		my %proprietes;
+		$proprietes{NOM_PRET} = $nom;
+		
+		$proprietes{TAUX} = $pret->{synthese}{taux};
+		$proprietes{CAPITAL_EMPRUNTE} = $pret->{synthese}{capital};
+		
+		$proprietes{TOTAL_DUREE} = $pret->{synthese}{echeances};
+		$proprietes{TOTAL_ASSURANCE} = tronquer_chiffre($pret->{synthese}{assurance});
+		$proprietes{TOTAL_TAUX_INTERET} = tronquer_chiffre($pret->{synthese}{interets});
+		$proprietes{TOTAL} = tronquer_chiffre($pret->{synthese}{interets} + $pret->{synthese}{assurance});
+
+		push(@recap_liste_prets, \%proprietes);
+	}
+			
+	$mainTemplate->param(PRETS_RECAP => \@recap_liste_prets);
+	$mainTemplate->param(TOTAL_CAPITAL => $resultats_prets->{synthese}{capital});
+	$mainTemplate->param(TOTAL_DUREE => $resultats_prets->{synthese}{echeances});
+	$mainTemplate->param(TOTAL_ASSURANCE => tronquer_chiffre($resultats_prets->{synthese}{assurance}));
+	$mainTemplate->param(TOTAL_TAUX_INTERET => tronquer_chiffre($resultats_prets->{synthese}{interets}));
+	$mainTemplate->param(TOTAL => tronquer_chiffre($resultats_prets->{synthese}{interets} + $resultats_prets->{synthese}{assurance}));
+	
+	#$mainTemplate->param(ECHEANCIER => \@list_connections_out);
+
+
+	INFO "Generating $fichier";
+	print OUTFILE $mainTemplate->output;
+	close OUTFILE;
+}
+
+sub tronquer_chiffre {
+	my ($valeur) = @_;
+	return sprintf("%.2f", $valeur);
 }
 
 __END__
