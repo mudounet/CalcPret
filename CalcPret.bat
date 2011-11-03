@@ -100,6 +100,10 @@ if($pret_sans_montant_ref) {
 # Calcul des échéances
 #########################################################
 my @echeances_autres_prets;
+my %calculs_prets;
+$calculs_prets{synthese}{interets} = 0;
+$calculs_prets{synthese}{assurance} = 0;
+$calculs_prets{synthese}{echeances} = 0;
 while (my ($nom_pret, $pret) = each(%prets)){
     DEBUG "Calcul des echeances du pret \"".$nom_pret."\"";
 	
@@ -114,22 +118,27 @@ while (my ($nom_pret, $pret) = each(%prets)){
 	}
 	
 	
-	open FILE,">details_$nom_pret.txt";
-	print FILE Dumper(\%pret_detail);
-	close FILE;
+	$calculs_prets{synthese}{interets} += $pret_detail{synthese}{interets};
+	$calculs_prets{synthese}{assurance} += $pret_detail{synthese}{assurance};
+	$calculs_prets{synthese}{echeances} = $pret_detail{synthese}{echeances} if $pret_detail{synthese}{echeances} > $calculs_prets{synthese}{echeances};
+	$calculs_prets{prets}{$nom_pret} = \%pret_detail;
 }
 
 if($pret_sans_montant_ref ) {
 	LOGDIE "revenus non renseignes et necessaires" unless ref $config->{revenus}->{revenu} eq "ARRAY";
+	my $nom_pret = $pret_sans_montant_ref->{nom};
 	my %pret_detail = calcul_detail_echeances($pret_sans_montant_ref, enveloppe_mensualites => $config->{revenus}->{revenu}, echeances_autre_pret => \@echeances_autres_prets);
 	
-	open FILE,">details_$pret_sans_montant_ref->{nom}.txt";
-	print FILE Dumper(\%pret_detail);
-	close FILE;
+	$calculs_prets{synthese}{interets} += $pret_detail{synthese}{interets};
+	$calculs_prets{synthese}{assurance} += $pret_detail{synthese}{assurance};
+	$calculs_prets{synthese}{echeances} = $pret_detail{synthese}{echeances} if $pret_detail{synthese}{echeances} > $calculs_prets{synthese}{echeances};
+	$calculs_prets{prets}{$nom_pret} = \%pret_detail;
 }
 
-open FILE,">details_echeances.txt";
-print FILE Dumper(\@echeances_autres_prets);
+$calculs_prets{echeances} = \@echeances_autres_prets;
+
+open FILE,">recapitulatif.txt";
+print FILE Dumper(\%calculs_prets);
 close FILE;
 
 
