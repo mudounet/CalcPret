@@ -109,11 +109,11 @@ while (my ($nom_pret, $pret) = each(%prets)){
 	my %pret_detail;
 	if($pret->{periodes}) {
 		foreach my $periode (@{$pret->{periodes}}) {
-			%pret_detail = calcul_detail_echeances($pret, $periode, \%pret_detail, \@echeances_autres_prets);
+			%pret_detail = calcul_detail_echeances($pret, echeances_autre_pret => \@echeances_autres_prets, periode => $periode, calcul_anciennes_periodes => \%pret_detail );
 		}
 	}
 	else {
-		%pret_detail = calcul_detail_echeances($pret, undef, undef, \@echeances_autres_prets);
+		%pret_detail = calcul_detail_echeances($pret, echeances_autre_pret => \@echeances_autres_prets);
 	}
 	
 	
@@ -131,12 +131,14 @@ close FILE;
 # Fonctions de calcul
 ############################################################################
 sub calcul_detail_echeances {
-	my ($param_pret_ref, $autres_parametres_prets_ref, $anciennes_periodes_ref, $echeances_autres_prets_ref) = @_;
+	my ($param_pret_ref, %options) = @_;
 	my %param_pret = %$param_pret_ref;
 
 	my (%donnees_pret, %autres_parametres_prets, %anciennes_periodes);
-	%autres_parametres_prets = %$autres_parametres_prets_ref if $autres_parametres_prets_ref;
-	%anciennes_periodes = %$anciennes_periodes_ref if $anciennes_periodes_ref;
+	%autres_parametres_prets = %{$options{periode}} if $options{periode};
+	%anciennes_periodes = %{$options{calcul_anciennes_periodes}} if $options{calcul_anciennes_periodes};
+	
+	my $echeances_autres_prets_ref = $options{echeances_autre_pret};
 	
 	my $capital_restant_du;
 
