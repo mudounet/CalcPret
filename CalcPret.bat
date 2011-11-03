@@ -128,7 +128,7 @@ while (my ($nom_pret, $pret) = each(%prets)){
 if($pret_sans_montant_ref ) {
 	LOGDIE "revenus non renseignes et necessaires" unless ref $config->{revenus}->{revenu} eq "ARRAY";
 	my $nom_pret = $pret_sans_montant_ref->{nom};
-	my %pret_detail = calcul_detail_echeances($pret_sans_montant_ref, enveloppe_mensualites => $config->{revenus}->{revenu}, echeances_autre_pret => \@echeances_autres_prets);
+	my %pret_detail = calcul_detail_echeances($pret_sans_montant_ref, enveloppe_mensualites => \@echeances, echeances_autre_pret => \@echeances_autres_prets);
 	
 	$calculs_prets{synthese}{capital} += $pret_detail{synthese}{capital};
 	$calculs_prets{synthese}{interets} += $pret_detail{synthese}{interets};
@@ -138,10 +138,6 @@ if($pret_sans_montant_ref ) {
 }
 
 $calculs_prets{echeances} = \@echeances_autres_prets;
-
-open FILE,">recapitulatif.txt";
-print FILE Dumper(\%calculs_prets);
-close FILE;
 
 ecrire_sortie_html (\%calculs_prets, "resultats.html");
 
@@ -182,6 +178,7 @@ sub calcul_detail_echeances {
 	my $echeances_periode = 0;
 	my $periode_calculee;
 	my $montant_echeance_dynamique = $options{enveloppe_mensualites}->[0]{montant} if $options{enveloppe_mensualites}->[0]{montant};
+	DEBUG "Montant dynamique : $montant_echeance_dynamique";
 	while($capital_restant_du > 0 && !$periode_calculee) {
 		
 		$echeances_periode++;
@@ -189,8 +186,6 @@ sub calcul_detail_echeances {
 		
 		my $echeance = $donnees_pret{synthese}{echeances} + $echeances_periode;
 
-		
-		
 		DEBUG "Calcul de l'echeance $echeance (".($echeance/12).") ...";
 
 		####### Calcul du montant des interets ##########################
@@ -205,12 +200,13 @@ sub calcul_detail_echeances {
 
 		####### Calcul du revenu à prendre en compte ########################
 		my $montant_echeance_calcule;
-		if($autres_parametres_prets{montant_hors_charges}) {
-			$montant_echeance_calcule = $autres_parametres_prets{montant_hors_charges} + $interets + $assurance;
-		}
-		elsif ($montant_echeance_dynamique) {
-			$montant_echeance_dynamique = $montant_echeance_dynamique = $options{enveloppe_mensualites}->[$echeance]{montant} if $options{enveloppe_mensualites}->[$echeance]{montant};
+		if ($montant_echeance_dynamique) {
+			$montant_echeance_dynamique = $options{enveloppe_mensualites}->[$echeance]{montant} if $options{enveloppe_mensualites}->[$echeance]{montant};
+			DEBUG "Montant dynamique : $montant_echeance_dynamique";
 			$montant_echeance_calcule = $montant_echeance_dynamique - $echeances_autres_prets_ref->[$echeance];
+		}
+		elsif($autres_parametres_prets{montant_hors_charges}) {
+			$montant_echeance_calcule = $autres_parametres_prets{montant_hors_charges} + $interets + $assurance;
 		}
 		elsif(!$montant_echeance) {
 			LOGDIE "ERREUR DANS LE PROGRAMME";

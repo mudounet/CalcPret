@@ -19,7 +19,7 @@
 	<revenu>
       <name>Salaire principal</name>
       <montant>1230</montant>
-	  <echeance>12</echeance>
+	  <echeance>13</echeance>
     </revenu>
   </revenus>
   <apports>
@@ -41,7 +41,7 @@
 	<pret>
       <name>PAL</name>
       <montant>20000</montant>
-      <taux>1.75</taux>
+      <taux>2.42</taux>
 	  <echeances>180</echeances>
     </pret>
     <pret>
