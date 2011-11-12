@@ -48,25 +48,41 @@ $output{"Apports personnels"} = 30000;
 #########################################################
 $output{"PTZ"}{"montant"} = 94150;
 $output{"Echeance base"} = 1200;
-$echeances_max = 480;
-$echeances_min = 0;
+my $echeances_max = 480;
+my $echeances_min = 0;
+my $taux = 5;
+my $nbre_iter_restant = 20;
 
 $output{"PAS"}{"montant"} = $output{"Cout total"} - $output{"Apports personnels"} - $output{"PTZ"}{"montant"};
 
-my %pret_pas = ( nom => $pret->{name}, capital => $output{"PAS"}{"montant"}, echeances => $pret->{echeances}, taux => $pret->{taux}, periodes => $pret->{periodes}->{mensualite});
+my %pret_pas = ( nom => "Pret PAS", capital => $output{"PAS"}{"montant"}, echeances => $echeances_max, taux => $taux);
 
-my %pret_pas = ( nom => $pret->{name}, capital => $output{"PTZ"}{"montant"}, echeances => $pret->{echeances}, taux => $pret->{taux}, periodes => $pret->{periodes}->{mensualite});
+my %pret_ptz = ( nom => "Pret PTZ", capital => $output{"PTZ"}{"montant"}, echeances => $echeances_max);
 
  do {
- 	
-	my $echeance = int(($echeances_max - $echeance_max) / 2);
+ 	DEBUG "Echeance min: $echeances_min ; Echeance max: $echeances_max";
+	my $echeance = int(($echeances_max + $echeances_min) / 2);
+	
+	DEBUG "Echeance actuelle: $echeance";
+	
+	$pret_pas{echeances} = $echeance;
+	$pret_ptz{echeances} = $echeance;
 	
 	%pret_pas = calc_mensualites(\%pret_pas);
 	
-	if( $output{"Echeance base"})
+	%pret_ptz = calc_mensualites_ptz(\%pret_ptz);
 	
+	DEBUG "Montant total du pret sur $pret_pas{echeances} mois : ".($pret_pas{mensualites} + $pret_ptz{mensualites});
 	
- } while ($echeances_max - $echeance_min > 1); 
+	if($pret_pas{mensualites} + $pret_ptz{mensualites} > $output{"Echeance base"}) {
+		$echeances_min = $echeance +1;
+	}
+	else {
+		$echeances_max = $echeance;
+	}
+	
+	$nbre_iter_restant--;
+ } while ($echeances_max - $echeances_min > 1 && $nbre_iter_restant); 
 
 exit;
 
