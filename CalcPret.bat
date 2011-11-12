@@ -36,23 +36,39 @@ my %output;
 #########################################################
 # Calcul du coût total de l'opération
 #########################################################
-$output{"Cout total"} = 0;
-
-foreach my $charge (@{$config->{bien_immobilier}->{charge}}) {
-	INFO "Traitement de la partie \"$charge->{name}\" du bien immobilier";
-	
-	$output{"Cout total"} += $charge->{montant};
-}
+$output{"Cout total"} = 272000;
 
 #########################################################
 # Déduction des apports personnels
 #########################################################
-$output{"Apports personnels"} = 0;
-foreach my $charge (@{$config->{apports}->{apport}}) {
-	INFO "Deduction de l'apport \"$charge->{name}\" du bien immobilier";
+$output{"Apports personnels"} = 30000;
+
+#########################################################
+# Calcul du PTZ
+#########################################################
+$output{"PTZ"}{"montant"} = 94150;
+$output{"Echeance base"} = 1200;
+$echeances_max = 480;
+$echeances_min = 0;
+
+$output{"PAS"}{"montant"} = $output{"Cout total"} - $output{"Apports personnels"} - $output{"PTZ"}{"montant"};
+
+my %pret_pas = ( nom => $pret->{name}, capital => $output{"PAS"}{"montant"}, echeances => $pret->{echeances}, taux => $pret->{taux}, periodes => $pret->{periodes}->{mensualite});
+
+my %pret_pas = ( nom => $pret->{name}, capital => $output{"PTZ"}{"montant"}, echeances => $pret->{echeances}, taux => $pret->{taux}, periodes => $pret->{periodes}->{mensualite});
+
+ do {
+ 	
+	my $echeance = int(($echeances_max - $echeance_max) / 2);
 	
-	$output{"Apports personnels"} += $charge->{montant};
-}
+	%pret_pas = calc_mensualites(\%pret_pas);
+	
+	if( $output{"Echeance base"})
+	
+	
+ } while ($echeances_max - $echeance_min > 1); 
+
+exit;
 
 #########################################################
 # Mise en place des échéances des revenus
@@ -266,6 +282,15 @@ sub calc_mensualites {
 	my $capital = $param_pret->{capital};
 	my $echeances = $param_pret->{echeances};
 	$param_pret->{mensualites} = $capital * $taux / ( 1 - 1/((1 + $taux)**($echeances)));
+	return %$param_pret;
+}
+
+sub calc_mensualites_ptz {
+	my ($param_pret, $taux_assurance) = @_;
+	$taux_assurance = 0 unless $taux_assurance;
+	my $capital = $param_pret->{capital};
+	my $echeances = $param_pret->{echeances};
+	$param_pret->{mensualites} = 0.55 * $capital / $echeances;	
 	return %$param_pret;
 }
 
