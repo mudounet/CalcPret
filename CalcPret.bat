@@ -73,13 +73,10 @@ my $revenus = <>;
 print "Entrer les APL : ";
 my $apl = <>;
 
+$output{"Echeance base"} = $revenus + $apl - $assurance;
 print "-------------------------------\n";
 print "Revenus totaux : ".$output{"Echeance base"}."\n";
 print "-------------------------------\n";
-
-
-$output{"Echeance base"} = $revenus + $apl - $assurance;
-
 
 #########################################################
 # Ne pas modifier en dessous de cette ligne
@@ -107,10 +104,10 @@ my %pret_ptz = ( nom => "Pret PTZ", capital => $output{"PTZ"}{"montant"}, echean
 	
 	%pret_pas = calc_mensualites(\%pret_pas);
 	
-	DEBUG "Montant total du pret PAS sur $pret_pas{echeances} mois : ".($pret_pas{mensualites} + $pret_ptz{mensualites});
-		
 	%pret_ptz = calc_mensualites_ptz(\%pret_ptz);
 	
+	DEBUG "Montant total du pret PAS sur $pret_pas{echeances} mois : ".($pret_pas{mensualites} + $pret_ptz{mensualites});
+		
 	DEBUG "Montant total du pret sur $pret_pas{echeances} mois : ".($pret_pas{mensualites} + $pret_ptz{mensualites});
 	
 	
