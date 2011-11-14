@@ -3,11 +3,11 @@
   <bien_immobilier>
     <charge>
       <name>Logement</name>
-      <montant>286000</montant>
+      <montant>265000</montant>
     </charge>
     <charge>
       <name>Frais notaire</name>
-      <montant>8855</montant>
+      <montant>6500</montant>
     </charge>
   </bien_immobilier>
   <revenus>

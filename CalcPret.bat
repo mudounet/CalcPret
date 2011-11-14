@@ -36,22 +36,59 @@ my %output;
 #########################################################
 # Calcul du coût total de l'opération
 #########################################################
-$output{"Cout total"} = 272000;
+print "-------------------------------\n";
+print "Entrer le cout de la maison : ";
+my $cout_maison = <>;
+
+print "Entrer le cout des frais de notaire : ";
+my $frais_notaire = <>;
+$output{"Cout total"} = $cout_maison + $frais_notaire;
+
+print "-------------------------------\n";
+print "Cout total : ".$output{"Cout total"}."\n";
+print "-------------------------------\n";
 
 #########################################################
 # Déduction des apports personnels
 #########################################################
-$output{"Apports personnels"} = 30000;
+print "Entrer l'apport personnel : ";
+$output{"Apports personnels"} = <>;
 
 #########################################################
 # Calcul du PTZ
 #########################################################
-$output{"PTZ"}{"montant"} = 94150;
-$output{"Echeance base"} = 1200;
+print "Entrer le montant du PTZ+ accorde : ";
+$output{"PTZ"}{"montant"} = <>;
+
+print "Entrer le taux d'interet : ";
+my $taux = <>;
+
+print "Entrer le montant d'assurance : ";
+my $assurance = <>;
+
+print "-------------------------------\n";
+print "Entrer les revenus : ";
+my $revenus = <>;
+
+print "Entrer les APL : ";
+my $apl = <>;
+
+print "-------------------------------\n";
+print "Revenus totaux : ".$output{"Echeance base"}."\n";
+print "-------------------------------\n";
+
+
+$output{"Echeance base"} = $revenus + $apl - $assurance;
+
+
+#########################################################
+# Ne pas modifier en dessous de cette ligne
+#########################################################
 my $echeances_max = 480;
 my $echeances_min = 0;
-my $taux = 5;
-my $nbre_iter_restant = 20;
+my $nbre_iter_restant = 40;
+my $calcul_fait = 1;
+my $derniere_echeance_valide = 0;
 
 $output{"PAS"}{"montant"} = $output{"Cout total"} - $output{"Apports personnels"} - $output{"PTZ"}{"montant"};
 
@@ -70,22 +107,49 @@ my %pret_ptz = ( nom => "Pret PTZ", capital => $output{"PTZ"}{"montant"}, echean
 	
 	%pret_pas = calc_mensualites(\%pret_pas);
 	
+	DEBUG "Montant total du pret PAS sur $pret_pas{echeances} mois : ".($pret_pas{mensualites} + $pret_ptz{mensualites});
+		
 	%pret_ptz = calc_mensualites_ptz(\%pret_ptz);
 	
 	DEBUG "Montant total du pret sur $pret_pas{echeances} mois : ".($pret_pas{mensualites} + $pret_ptz{mensualites});
 	
+	
+	DEBUG "Montant total du pret sur $pret_pas{echeances} mois : ".($pret_pas{mensualites} + $pret_ptz{mensualites});
+	
+	$calcul_fait = 1;
 	if($pret_pas{mensualites} + $pret_ptz{mensualites} > $output{"Echeance base"}) {
-		$echeances_min = $echeance +1;
+		$echeances_min = $echeance + 1;
+		$calcul_fait = 0;
 	}
 	else {
 		$echeances_max = $echeance;
+		$derniere_echeance_valide = $echeance;
 	}
 	
 	$nbre_iter_restant--;
- } while ($echeances_max - $echeances_min > 1 && $nbre_iter_restant); 
+ } while (($echeances_max - $echeances_min > 0 || !$calcul_fait ) && $nbre_iter_restant); 
+ 
+ INFO "Duree du pret : $derniere_echeance_valide mois soit ".$derniere_echeance_valide/12;
+ 
+ 
+	$pret_pas{echeances} = $derniere_echeance_valide;
+	$pret_ptz{echeances} = $derniere_echeance_valide;
+	
+	%pret_pas = calc_mensualites(\%pret_pas);
 
+ 
+INFO "Echeance du pret PAS : $pret_pas{mensualites}€";
+		
+	%pret_ptz = calc_mensualites_ptz(\%pret_ptz);
+	
+INFO "Echeance du pret PTZ : $pret_ptz{mensualites}€";
+
+INFO "Echeance total : ".($pret_pas{mensualites} + $pret_ptz{mensualites} - 171);
+	
+INFO "Duree du pret : $derniere_echeance_valide mois soit ".$derniere_echeance_valide/12;
+ 
 exit;
-
+ 
 #########################################################
 # Mise en place des échéances des revenus
 #########################################################
