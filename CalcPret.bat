@@ -24,7 +24,7 @@ use constant {
 	PROGRAM_VERSION => '0.1',
 };
 
-INFO("Starting program (V ".PROGRAM_VERSION.")");
+DEBUG("Starting program (V ".PROGRAM_VERSION.")");
 
 #########################################################
 # loading of Configuration files

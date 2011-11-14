@@ -26,7 +26,7 @@ mkpath($SCRIPT_OUTPUT_DIR) and print "Perl script output directory created in \"
 mkpath($SCRIPT_LOG_DIR) and print "Perl script directory for logfiles created in \"$SCRIPT_LOG_DIR\"\n" unless -d $SCRIPT_LOG_DIR;
 
 my $config_text = <<TEXT;
-log4perl.rootLogger = DEBUG, LOGFILE, PERMLOGFILE, Screen
+log4perl.rootLogger = INFO, LOGFILE, PERMLOGFILE, Screen
 
 log4perl.appender.LOGFILE = Log::Log4perl::Appender::File
 log4perl.appender.LOGFILE.filename = sub { logFile('lastExec'); };
@@ -51,8 +51,8 @@ log4perl.appender.Screen.layout=Log::Log4perl::Layout::SimpleLayout
 TEXT
 
 my $foundLogFile = 0;
-Log::Log4perl->init_once( $SCRIPT_PARAMETERS_DIR."log-config.conf" ) and DEBUG "Found customization of logging file in script directory" and $foundLogFile++ if -r $SCRIPT_PARAMETERS_DIR."log-config.conf";
-Log::Log4perl->init_once( $SHARED_PARAMETERS_DIR."log-config.conf" ) and DEBUG "Found customization of logging file in shared directory" and $foundLogFile++ if not $foundLogFile and -r $SHARED_PARAMETERS_DIR."log-config.conf";
+#Log::Log4perl->init_once( $SCRIPT_PARAMETERS_DIR."log-config.conf" ) and DEBUG "Found customization of logging file in script directory" and $foundLogFile++ if -r $SCRIPT_PARAMETERS_DIR."log-config.conf";
+#Log::Log4perl->init_once( $SHARED_PARAMETERS_DIR."log-config.conf" ) and DEBUG "Found customization of logging file in shared directory" and $foundLogFile++ if not $foundLogFile and -r $SHARED_PARAMETERS_DIR."log-config.conf";
 Log::Log4perl->init_once( \$config_text ) and DEBUG "Taking default logging parameters" if not $foundLogFile;
 
 my $logger = Log::Log4perl->get_logger();
