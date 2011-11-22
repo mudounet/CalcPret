@@ -67,7 +67,7 @@ print "Entrer le montant d'assurance : ";
 my $assurance = <>;
 
 print "-------------------------------\n";
-print "Entrer les revenus : ";
+print "Entrer le montant limite (hors APL) : ";
 my $revenus = <>;
 
 print "Entrer les APL : ";
@@ -108,6 +108,7 @@ my %pret_ptz = ( nom => "Pret PTZ", capital => $output{"PTZ"}{"montant"}, echean
 	
 	DEBUG "Montant total du pret PAS sur $pret_pas{echeances} mois : ".($pret_pas{mensualites} + $pret_ptz{mensualites});
 		
+	
 	DEBUG "Montant total du pret sur $pret_pas{echeances} mois : ".($pret_pas{mensualites} + $pret_ptz{mensualites});
 	
 	
@@ -141,7 +142,9 @@ INFO "Echeance du pret PAS : $pret_pas{mensualites}€";
 	
 INFO "Echeance du pret PTZ : $pret_ptz{mensualites}€";
 
-INFO "Echeance total : ".($pret_pas{mensualites} + $pret_ptz{mensualites} - 171);
+INFO "Echeance total : ".($pret_pas{mensualites} + $pret_ptz{mensualites});
+
+INFO "Echeance total (APL deduit) : ".($pret_pas{mensualites} + $pret_ptz{mensualites} - $apl);
 	
 INFO "Duree du pret : $derniere_echeance_valide mois soit ".$derniere_echeance_valide/12;
  
