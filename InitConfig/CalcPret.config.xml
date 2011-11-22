@@ -36,22 +36,22 @@
     <pret>
       <name>PAS</name>
       <montant></montant>
-      <taux>4</taux>
+      <taux>4.05</taux>
     </pret>
 	<pret>
       <name>PAL</name>
       <montant>20000</montant>
-      <taux>2.42</taux>
+      <taux>2.15</taux>
 	  <echeances>180</echeances>
     </pret>
     <pret>
-      <name>PTZ (BBC en CUS)</name>
+      <name>PTZ</name>
       <montant>94150</montant>
       <taux>0</taux>
       <periodes>
         <mensualite>
-          <montant_hors_charges>237.53</montant_hors_charges>
-          <echeances>218</echeances>
+          <montant_hors_charges></montant_hors_charges>
+          <echeances></echeances>
         </mensualite>
         <mensualite>
           <montant_hors_charges>504.38</montant_hors_charges>

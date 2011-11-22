@@ -58,7 +58,7 @@ $output{"Apports personnels"} = <>;
 # Calcul du PTZ
 #########################################################
 print "Entrer le montant du PTZ+ accorde : ";
-$output{"PTZ"}{"montant"} = <>;
+$output{"PTZ"}{"montant"} = 94150;
 
 print "Entrer le taux d'interet : ";
 my $taux = <>;
@@ -148,8 +148,6 @@ INFO "Echeance total (APL deduit) : ".($pret_pas{mensualites} + $pret_ptz{mensua
 	
 INFO "Duree du pret : $derniere_echeance_valide mois soit ".$derniere_echeance_valide/12;
  
-exit;
- 
 #########################################################
 # Mise en place des échéances des revenus
 #########################################################
@@ -169,6 +167,12 @@ my $restant_pret = $output{"Cout total"} - $output{"Apports personnels"};
 foreach my $pret (@{$config->{prets}->{pret}}) {
 	INFO "Calcul des parametres du pret \"$pret->{name}\"";
 	my %param_pret = ( nom => $pret->{name}, capital => $pret->{montant}, mensualites => $pret->{mensualites}, echeances => $pret->{echeances}, taux => $pret->{taux}, periodes => $pret->{periodes}->{mensualite});
+	
+	if($pret->{name} eq "PTZ") {
+		$param_pret{periodes}->[0]->{montant_hors_charges} = $pret_ptz{mensualites};
+		$param_pret{periodes}->[0]->{echeances} = $derniere_echeance_valide;
+	}
+	
 	if(ref($pret->{montant}) eq "" && $pret->{montant} > 0) {
 		DEBUG "Pret renseigne trouve";
 		
