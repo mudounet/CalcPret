@@ -36,118 +36,24 @@ my %output;
 #########################################################
 # Calcul du coût total de l'opération
 #########################################################
-print "-------------------------------\n";
-print "Entrer le cout de la maison : ";
-my $cout_maison = <>;
+$output{"Cout total"} = 0;
 
-print "Entrer le cout des frais de notaire : ";
-my $frais_notaire = <>;
-$output{"Cout total"} = $cout_maison + $frais_notaire;
-
-print "-------------------------------\n";
-print "Cout total : ".$output{"Cout total"}."\n";
-print "-------------------------------\n";
+foreach my $charge (@{$config->{bien_immobilier}->{charge}}) {
+	INFO "Traitement de la partie \"$charge->{name}\" du bien immobilier";
+	
+	$output{"Cout total"} += $charge->{montant};
+}
 
 #########################################################
 # Déduction des apports personnels
 #########################################################
-print "Entrer l'apport personnel : ";
-$output{"Apports personnels"} = <>;
-
-#########################################################
-# Calcul du PTZ
-#########################################################
-print "Entrer le montant du PTZ+ accorde : ";
-$output{"PTZ"}{"montant"} = 94150;
-
-print "Entrer le taux d'interet : ";
-my $taux = <>;
-
-print "Entrer le montant d'assurance : ";
-my $assurance = <>;
-
-print "-------------------------------\n";
-print "Entrer le montant limite (hors APL) : ";
-my $revenus = <>;
-
-print "Entrer les APL : ";
-my $apl = <>;
-
-$output{"Echeance base"} = $revenus + $apl - $assurance;
-print "-------------------------------\n";
-print "Revenus totaux : ".$output{"Echeance base"}."\n";
-print "-------------------------------\n";
-
-#########################################################
-# Ne pas modifier en dessous de cette ligne
-#########################################################
-my $echeances_max = 480;
-my $echeances_min = 0;
-my $nbre_iter_restant = 40;
-my $calcul_fait = 1;
-my $derniere_echeance_valide = 0;
-
-$output{"PAS"}{"montant"} = $output{"Cout total"} - $output{"Apports personnels"} - $output{"PTZ"}{"montant"};
-
-my %pret_pas = ( nom => "Pret PAS", capital => $output{"PAS"}{"montant"}, echeances => $echeances_max, taux => $taux);
-
-my %pret_ptz = ( nom => "Pret PTZ", capital => $output{"PTZ"}{"montant"}, echeances => $echeances_max);
-
- do {
- 	DEBUG "Echeance min: $echeances_min ; Echeance max: $echeances_max";
-	my $echeance = int(($echeances_max + $echeances_min) / 2);
+$output{"Apports personnels"} = 0;
+foreach my $charge (@{$config->{apports}->{apport}}) {
+	INFO "Deduction de l'apport \"$charge->{name}\" du bien immobilier";
 	
-	DEBUG "Echeance actuelle: $echeance";
-	
-	$pret_pas{echeances} = $echeance;
-	$pret_ptz{echeances} = $echeance;
-	
-	%pret_pas = calc_mensualites(\%pret_pas);
-	
-	%pret_ptz = calc_mensualites_ptz(\%pret_ptz);
-	
-	DEBUG "Montant total du pret PAS sur $pret_pas{echeances} mois : ".($pret_pas{mensualites} + $pret_ptz{mensualites});
-		
-	
-	DEBUG "Montant total du pret sur $pret_pas{echeances} mois : ".($pret_pas{mensualites} + $pret_ptz{mensualites});
-	
-	
-	DEBUG "Montant total du pret sur $pret_pas{echeances} mois : ".($pret_pas{mensualites} + $pret_ptz{mensualites});
-	
-	$calcul_fait = 1;
-	if($pret_pas{mensualites} + $pret_ptz{mensualites} > $output{"Echeance base"}) {
-		$echeances_min = $echeance + 1;
-		$calcul_fait = 0;
-	}
-	else {
-		$echeances_max = $echeance;
-		$derniere_echeance_valide = $echeance;
-	}
-	
-	$nbre_iter_restant--;
- } while (($echeances_max - $echeances_min > 0 || !$calcul_fait ) && $nbre_iter_restant); 
- 
- INFO "Duree du pret : $derniere_echeance_valide mois soit ".$derniere_echeance_valide/12;
- 
- 
-	$pret_pas{echeances} = $derniere_echeance_valide;
-	$pret_ptz{echeances} = $derniere_echeance_valide;
-	
-	%pret_pas = calc_mensualites(\%pret_pas);
+	$output{"Apports personnels"} += $charge->{montant};
+}
 
- 
-INFO "Echeance du pret PAS : $pret_pas{mensualites}€";
-		
-	%pret_ptz = calc_mensualites_ptz(\%pret_ptz);
-	
-INFO "Echeance du pret PTZ : $pret_ptz{mensualites}€";
-
-INFO "Echeance total : ".($pret_pas{mensualites} + $pret_ptz{mensualites});
-
-INFO "Echeance total (APL deduit) : ".($pret_pas{mensualites} + $pret_ptz{mensualites} - $apl);
-	
-INFO "Duree du pret : $derniere_echeance_valide mois soit ".$derniere_echeance_valide/12;
- 
 #########################################################
 # Mise en place des échéances des revenus
 #########################################################
@@ -155,23 +61,18 @@ my @echeances;
 foreach my $charge (@{$config->{revenus}->{revenu}}) {
 	INFO "Traitement de la partie \"$charge->{name}\" du bien immobilier";
 	
-	$echeances[$charge->{echeance}]{montant} += $charge->{montant};
+	$echeances[$charge->{echeance}]{montant} += $charge->{montant} + $config->{apl}->{montant};
 }
 
 #########################################################
 # Calcul des différents prêts
 #########################################################
 my %prets;
-my $pret_sans_montant_ref = undef;
 my $restant_pret = $output{"Cout total"} - $output{"Apports personnels"};
-foreach my $pret (@{$config->{prets}->{pret}}) {
+
+foreach my $pret (@{$config->{prets}->{autres_prets}->{pret}}) {
 	INFO "Calcul des parametres du pret \"$pret->{name}\"";
 	my %param_pret = ( nom => $pret->{name}, capital => $pret->{montant}, mensualites => $pret->{mensualites}, echeances => $pret->{echeances}, taux => $pret->{taux}, periodes => $pret->{periodes}->{mensualite});
-	
-	if($pret->{name} eq "PTZ") {
-		$param_pret{periodes}->[0]->{montant_hors_charges} = $pret_ptz{mensualites};
-		$param_pret{periodes}->[0]->{echeances} = $derniere_echeance_valide;
-	}
 	
 	if(ref($pret->{montant}) eq "" && $pret->{montant} > 0) {
 		DEBUG "Pret renseigne trouve";
@@ -181,20 +82,29 @@ foreach my $pret (@{$config->{prets}->{pret}}) {
 		
 		$prets{$pret->{name}} = \%param_pret;
 	} else {
-		if(!$pret_sans_montant_ref) {
-			DEBUG "Pret sans montant detecte";
-			$pret_sans_montant_ref = \%param_pret;
-		}
-		else {
-			LOGDIE "Plusieurs prets sans montant detectes."
-		}
+		LOGDIE "Pret sans montant detecte."
 	}
 }
 
-if($pret_sans_montant_ref) {
-	INFO "Calcul du montant a partir des autres prets.";
-	$pret_sans_montant_ref->{capital} = $restant_pret;
+if($config->{prets}->{pret_ptz}->{montant}) {
+	my %pret = (nom => $config->{prets}->{pret_ptz}->{name}, capital => $config->{prets}->{pret_ptz}->{montant}, mensualites => undef, echeances => undef, taux => 0, periodes => undef);
+	$prets{"PTZ"} = \%pret;
+	$restant_pret -= $prets{PTZ}{capital};
 }
+
+if($config->{prets}->{pret_principal}->{taux}) {
+	INFO "Montant du pret principal : $restant_pret";
+	my %pret = (nom => $config->{prets}->{pret_principal}->{name}, capital => $restant_pret, mensualites => undef, echeances => undef, taux => $config->{prets}->{pret_principal}->{taux}, periodes => undef);
+	$prets{"PAS"} = \%pret;
+	
+}
+print Dumper \%prets;
+exit;
+
+#########################################################
+# Calcul du PTZ
+#########################################################
+calc_mensualites_ptz();
 
 #########################################################
 # Calcul des échéances
@@ -225,17 +135,18 @@ while (my ($nom_pret, $pret) = each(%prets)){
 	$calculs_prets{prets}{$nom_pret} = \%pret_detail;
 }
 
-if($pret_sans_montant_ref ) {
-	LOGDIE "revenus non renseignes et necessaires" unless ref $config->{revenus}->{revenu} eq "ARRAY";
-	my $nom_pret = $pret_sans_montant_ref->{nom};
-	my %pret_detail = calcul_detail_echeances($pret_sans_montant_ref, enveloppe_mensualites => \@echeances, echeances_autre_pret => \@echeances_autres_prets);
+exit;
+# if($pret_sans_montant_ref ) {
+	# LOGDIE "revenus non renseignes et necessaires" unless ref $config->{revenus}->{revenu} eq "ARRAY";
+	# my $nom_pret = $pret_sans_montant_ref->{nom};
+	# my %pret_detail = calcul_detail_echeances($pret_sans_montant_ref, enveloppe_mensualites => \@echeances, echeances_autre_pret => \@echeances_autres_prets);
 	
-	$calculs_prets{synthese}{capital} += $pret_detail{synthese}{capital};
-	$calculs_prets{synthese}{interets} += $pret_detail{synthese}{interets};
-	$calculs_prets{synthese}{assurance} += $pret_detail{synthese}{assurance};
-	$calculs_prets{synthese}{echeances} = $pret_detail{synthese}{echeances} if $pret_detail{synthese}{echeances} > $calculs_prets{synthese}{echeances};
-	$calculs_prets{prets}{$nom_pret} = \%pret_detail;
-}
+	# $calculs_prets{synthese}{capital} += $pret_detail{synthese}{capital};
+	# $calculs_prets{synthese}{interets} += $pret_detail{synthese}{interets};
+	# $calculs_prets{synthese}{assurance} += $pret_detail{synthese}{assurance};
+	# $calculs_prets{synthese}{echeances} = $pret_detail{synthese}{echeances} if $pret_detail{synthese}{echeances} > $calculs_prets{synthese}{echeances};
+	# $calculs_prets{prets}{$nom_pret} = \%pret_detail;
+# }
 
 $calculs_prets{echeances} = \@echeances_autres_prets;
 
@@ -370,12 +281,52 @@ sub calc_mensualites {
 }
 
 sub calc_mensualites_ptz {
-	my ($param_pret, $taux_assurance) = @_;
-	$taux_assurance = 0 unless $taux_assurance;
-	my $capital = $param_pret->{capital};
-	my $echeances = $param_pret->{echeances};
-	$param_pret->{mensualites} = 0.55 * $capital / $echeances;	
-	return %$param_pret;
+	my $taux = 4.05;
+	my $echeances_max = 480;
+	my $echeances_min = 0;
+	my $nbre_iter_restant = 40;
+	my $calcul_fait = 1;
+	my $derniere_echeance_valide = 0;
+
+	$output{"PAS"}{"montant"} = $output{"Cout total"} - $output{"Apports personnels"} - $output{"PTZ"}{"montant"};
+
+	my %pret_pas = ( nom => "Pret PAS", capital => $output{"PAS"}{"montant"}, echeances => $echeances_max, taux => $taux);
+
+	my %pret_ptz = ( nom => "Pret PTZ", capital => $output{"PTZ"}{"montant"}, echeances => $echeances_max);
+
+	 do {
+		DEBUG "Echeance min: $echeances_min ; Echeance max: $echeances_max";
+		my $echeance = int(($echeances_max + $echeances_min) / 2);
+		
+		DEBUG "Echeance actuelle: $echeance";
+		
+		$pret_pas{echeances} = $echeance;
+		$pret_ptz{echeances} = $echeance;
+		
+		%pret_pas = calc_mensualites(\%pret_pas);
+		
+		$pret_ptz{mensualites} = 0.55 * $pret_ptz{capital} / $echeance;	
+		
+		DEBUG "Montant total du pret PAS sur $pret_pas{echeances} mois : ".($pret_pas{mensualites} + $pret_ptz{mensualites});
+			
+		
+		DEBUG "Montant total du pret sur $pret_pas{echeances} mois : ".($pret_pas{mensualites} + $pret_ptz{mensualites});
+		
+		
+		DEBUG "Montant total du pret sur $pret_pas{echeances} mois : ".($pret_pas{mensualites} + $pret_ptz{mensualites});
+		
+		$calcul_fait = 1;
+		if($pret_pas{mensualites} + $pret_ptz{mensualites} > $output{"Echeance base"}) {
+			$echeances_min = $echeance + 1;
+			$calcul_fait = 0;
+		}
+		else {
+			$echeances_max = $echeance;
+			$derniere_echeance_valide = $echeance;
+		}
+		
+		$nbre_iter_restant--;
+	} while (($echeances_max - $echeances_min > 0 || !$calcul_fait ) && $nbre_iter_restant); 
 }
 
 sub ecrire_sortie_html {
@@ -522,7 +473,6 @@ sub filtrer_ligne_echeancier {
 	$echeance{CAPITAL_REMBOURSE} = tronquer_chiffre($echeance{CAPITAL_REMBOURSE}) if $echeance{CAPITAL_REMBOURSE};
 	
 	return \%echeance;
-
 }
 
 __END__

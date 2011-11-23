@@ -3,24 +3,22 @@
   <bien_immobilier>
     <charge>
       <name>Logement</name>
-      <montant>265000</montant>
+      <montant>272000</montant>
     </charge>
     <charge>
       <name>Frais notaire</name>
-      <montant>6500</montant>
+      <montant>7000</montant>
     </charge>
   </bien_immobilier>
+  <apl>
+	<montant>177</montant>
+  </apl>
   <revenus>
     <revenu>
       <name>Salaire principal</name>
-      <montant>1196.24</montant>
+      <montant>1186</montant>
 	  <echeance>0</echeance>
     </revenu>
-	<revenu2>
-      <name>Salaire principal</name>
-      <montant>1230</montant>
-	  <echeance>13</echeance>
-    </revenu2>
   </revenus>
   <apports>
     <apport>
@@ -33,35 +31,30 @@
     </apport2>
   </apports>
   <prets>
-    <pret>
+    <pret_principal>
       <name>PAS</name>
       <montant></montant>
       <taux>4.05</taux>
-    </pret>
+    </pret_principal>
+    <pret_ptz>
+	  <name>PTZ</name>
+      <montant>94150</montant>
+    </pret_ptz>
+	<autres_prets>
 	<pret>
       <name>PAL</name>
       <montant>20000</montant>
       <taux>2.15</taux>
 	  <echeances>180</echeances>
     </pret>
-    <pret>
-      <name>PTZ</name>
-      <montant>94150</montant>
-      <taux>0</taux>
-      <periodes>
-        <mensualite>
-          <montant_hors_charges></montant_hors_charges>
-          <echeances></echeances>
-        </mensualite>
-        <mensualite>
-          <montant_hors_charges>504.38</montant_hors_charges>
-          <echeances>84</echeances>
-        </mensualite>
-      </periodes>
-    </pret>
+	</autres_prets>
   </prets>
-  <assurance>
-    <name>Assurance</name>
+  <assurance_crd>
+    <name>Assurance sur capital restant dû</name>
     <taux>0.08</taux>
-  </assurance>
+  </assurance_crd>
+  <assurance_ci>
+    <name>Assurance sur capital initial</name>
+    <montant>50</montant>
+  </assurance_ci>
 </config>
